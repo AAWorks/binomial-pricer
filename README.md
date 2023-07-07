@@ -1,2 +1,5 @@
-# binomial-pricer
-OCaml Data Piping |> py pricing algo
+# Options Pricing for both US and EU Options
+Alejandro Alonso and Roman Chenoweth
+
+### US - Binomial pricing
+### EU - Black-Scholes
