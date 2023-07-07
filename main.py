@@ -5,3 +5,16 @@ st.title('Options Pricing: From Binomial to Black Shouls :chart_with_upwards_tre
 st.caption("By Alejandro Alonso and Roman Chenoweth")
 
 
+region = st.selectbox("Select Market Region", ("United States of America", "European Union"))
+
+if region == "United States of America":
+    with st.form("us"):
+        st.write("hi")
+
+elif region == "European Union":
+    with st.form("eu"):
+        st.write("hi")
+
+else:
+    st.warning("No Market Region Selected")
+
