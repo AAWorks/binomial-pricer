@@ -1,4 +1,4 @@
-# Options Pricing for both US and EU Options
+# Options Pricing for US and EU Markets
 
 ### US Binomial Pricing & EU Black-Scholes
 ---
