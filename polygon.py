@@ -20,12 +20,12 @@ class Polygon:
 
     def _get_req_url(self, extension: str = ""):
         return self._base_url + extension
+
+    def query(self, query: str):
+        pass
     
     def option(self, ticker, date, position):
         pass
 
     def options(self, ticker, start_date, end_date=None, position=None):
-        pass
-
-    def query(self, query: str):
         pass
