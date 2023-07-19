@@ -1,68 +1,57 @@
-import quantlib as ql 
+import QuantLib as ql 
 
-maturity_date = ql.Date(31, 12, 2019)
-spot_price = 100
-strike_price = 100
-volatility = 0.20 # the historical vols or implied vols
-dividend_rate =  0.02
+maturity = ql.Date(1, 1, 2020)
+S0 = 100
+K = 100
+r = 0.0
+sigma = 0.20
+d =  0.0
+otype = ql.Option.Put
+dc = ql.Actual365Fixed()
+calendar = ql.NullCalendar()
 
-option_type = ql.Option.Call
-
-risk_free_rate = 0.0
-day_count = ql.Actual365Fixed()
-calculation_date = ql.Date(1, 1, 2019)
+today = ql.Date(1, 1, 2019)
+ql.Settings.instance().evaluationDate = today
 
 
 def baseline():
-    calendar = ql.UnitedStates()
+    payoff = ql.PlainVanillaPayoff(otype, K)
 
-    ql.Settings.instance().evaluationDate = calculation_date
+    european_exercise = ql.EuropeanExercise(maturity)
+    european_option = ql.VanillaOption(payoff, european_exercise)
 
-    payoff = ql.PlainVanillaPayoff(option_type, strike_price)
-    settlement = calculation_date
+    american_exercise = ql.AmericanExercise(today, maturity)
+    american_option = ql.VanillaOption(payoff, american_exercise)
 
-    am_exercise = ql.AmericanExercise(settlement, maturity_date)
-    american_option = ql.VanillaOption(payoff, am_exercise)
+    d_ts = ql.YieldTermStructureHandle(ql.FlatForward(today, d, dc))
+    r_ts = ql.YieldTermStructureHandle(ql.FlatForward(today, r, dc))
+    sigma_ts = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(today, calendar, sigma, dc))
+    bsm_process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(S0)), d_ts, r_ts, sigma_ts)
 
-    eu_exercise = ql.EuropeanExercise(maturity_date)
-    european_option = ql.VanillaOption(payoff, eu_exercise)
+    pricing_dict = {}
 
-    spot_handle = ql.QuoteHandle(
-        ql.SimpleQuote(spot_price)
-    )
-    flat_ts = ql.YieldTermStructureHandle(
-        ql.FlatForward(calculation_date, risk_free_rate, day_count)
-    )
-    dividend_yield = ql.YieldTermStructureHandle(
-        ql.FlatForward(calculation_date, dividend_rate, day_count)
-    )
-    flat_vol_ts = ql.BlackVolTermStructureHandle(
-        ql.BlackConstantVol(calculation_date, calendar, volatility, day_count)
-    )
-    bsm_process = ql.BlackScholesMertonProcess(spot_handle, 
-                                            dividend_yield, 
-                                            flat_ts, 
-                                            flat_vol_ts)
-    
-    steps = 200
-    binomial_engine = ql.BinomialVanillaEngine(bsm_process, "crr", steps)
+    bsm73 = ql.AnalyticEuropeanEngine(bsm_process)
+    european_option.setPricingEngine(bsm73)
+    pricing_dict['BlackScholesEuropean'] = european_option.NPV()
+
+    binomial_engine = ql.BinomialVanillaEngine(bsm_process, "crr", 100)
     american_option.setPricingEngine(binomial_engine)
+    pricing_dict['BinomialTree'] = american_option.NPV()
+
+    pricing_dict['EarlyExercisePnL'] = american_option.NPV() - european_option.NPV()
 
     def binomial_price(option, bsm_process, steps):
         binomial_engine = ql.BinomialVanillaEngine(bsm_process, "crr", steps)
         option.setPricingEngine(binomial_engine)
         return option.NPV()
 
-    steps = range(5, 200, 1)
-    eu_prices = [binomial_price(european_option, bsm_process, step) for step in steps]
-    am_prices = [binomial_price(american_option, bsm_process, step) for step in steps]
-    # theoretican European option price
-    european_option.setPricingEngine(ql.AnalyticEuropeanEngine(bsm_process))
-    am_price = american_option.NPV()
-    bs_price = european_option.NPV()
+    eu_prices, am_prices = [], []
+    for step in range(5, 200, 1):
+        eu_prices.append(binomial_price(european_option, bsm_process, step))
+        am_prices.append(binomial_price(american_option, bsm_process, step))
 
-    return am_price, bs_price
+    return pricing_dict
 
 prices = baseline()
 
-print(f"Merican Opt: {prices[0]}\nEuro Opt:{prices[1]}")
+print(prices)
