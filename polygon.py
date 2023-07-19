@@ -1,7 +1,6 @@
 import requests
 
-
-class USOptions:
+class Polygon:
     _headers: dict
 
     def __init__(self):
