@@ -1,5 +1,5 @@
 import torch
-from torch.distributions import Normals
+from torch.distributions import Normal
 
 class BlackScholesOption:
     def __init__(self, 
@@ -9,8 +9,8 @@ class BlackScholesOption:
                  T = torch.tensor(1.0, requires_grad=True), 
                  sigma = torch.tensor(0.20, requires_grad=True), 
                  r = torch.tensor(0.00, requires_grad=True)):
-        self._std_norm_cdf = self._Normal(0, 1).cdf
-        self._std_norm_pdf = lambda x: torch.exp(self._Normal(0, 1).log_prob(x))
+        self._std_norm_cdf = Normal(0, 1).cdf
+        self._std_norm_pdf = lambda x: torch.exp(Normal(0, 1).log_prob(x))
         self._option_type = right
         # Present Value of Exercise Price
         self._k = K
