@@ -6,7 +6,7 @@ class BlackScholesOption:
                  right="C",
                  K=torch.tensor(100.0, requires_grad=True), 
                  S=torch.tensor(100.0, requires_grad=True), 
-                 T = torch.tensor(1.0, requires_grad=True), 
+                 T = torch.tensor(1.0, requires_grad=True), #time in years
                  sigma = torch.tensor(0.20, requires_grad=True), 
                  r = torch.tensor(0.00, requires_grad=True)):
         self._std_norm_cdf = Normal(0, 1).cdf
@@ -46,7 +46,7 @@ class BlackScholesOption:
         d_2 = d_1 - self._sigma * torch.sqrt(self._t)
         
         if self._option_type == "C":
-            C = self._std_norm_cdf(d_1) * S - self._std_norm_cdf(d_2) * self._k * torch.exp(-self._r * self._t)
+            C = self._std_norm_cdf(d_1) * self._s - self._std_norm_cdf(d_2) * self._k * torch.exp(-self._r * self._t)
             return C
             
         elif self._option_type == "P":
