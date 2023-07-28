@@ -5,7 +5,7 @@ class Polygon:
     _base_url: str
 
     def __init__(self):
-        with open('keys/polygon.txt', 'r') as keyfile:
+        with open('data/polygon.txt', 'r') as keyfile:
             key = keyfile.readline().strip()
 
         self._headers = {
