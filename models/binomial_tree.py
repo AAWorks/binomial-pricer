@@ -2,6 +2,8 @@ import QuantLib as ql
 
 class BinomialTreeOption:
     def __init__(self, otype=ql.Option.Put, S=100, K=100, start=(1,1,2019), maturity=(1,1,2020), sigma=0.20, r=0.0, d=0.2):
+        self._option_data = (otype, K, S, sigma, r, d)
+        
         self._maturity_date = ql.Date(*maturity)
         self._dc = ql.Actual365Fixed()
         self._calendar = ql.NullCalendar()
@@ -16,18 +18,19 @@ class BinomialTreeOption:
         self._pnl = self._binom - self._bs
     
     def _get_prices(self):
-        payoff = ql.PlainVanillaPayoff(otype, K)
+        otype, k, s, sigma, r, d = self._option_data
+        payoff = ql.PlainVanillaPayoff(otype, k)
 
-        european_exercise = ql.EuropeanExercise(maturity)
+        european_exercise = ql.EuropeanExercise(self._maturity_date)
         european_option = ql.VanillaOption(payoff, european_exercise)
 
-        american_exercise = ql.AmericanExercise(today, maturity)
+        american_exercise = ql.AmericanExercise(self._start_date, self._maturity_date)
         american_option = ql.VanillaOption(payoff, american_exercise)
 
-        d_ts = ql.YieldTermStructureHandle(ql.FlatForward(today, d, dc))
-        r_ts = ql.YieldTermStructureHandle(ql.FlatForward(today, r, dc))
-        sigma_ts = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(today, calendar, sigma, dc))
-        bsm_process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(S0)), d_ts, r_ts, sigma_ts)
+        d_ts = ql.YieldTermStructureHandle(ql.FlatForward(self._start_date, d, self._dc))
+        r_ts = ql.YieldTermStructureHandle(ql.FlatForward(self._start_date, r, self._dc))
+        sigma_ts = ql.BlackVolTermStructureHandle(ql.BlackConstantVol(self._start_date, self._calendar, sigma, self._dc))
+        bsm_process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(s)), d_ts, r_ts, sigma_ts)
 
         bsm73 = ql.AnalyticEuropeanEngine(bsm_process)
         european_option.setPricingEngine(bsm73)
