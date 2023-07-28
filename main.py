@@ -2,7 +2,7 @@ import streamlit as st
 
 from models.binomial_tree import BinomialTreeOption
 from models.black_scholes import BlackScholesOption
-#from models.monte_carlo import MonteCarloOption
+from models.monte_carlo import MonteCarloOption
 
 from polygon import Polygon
 
