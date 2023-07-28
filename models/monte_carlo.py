@@ -33,7 +33,7 @@ class MonteCarloOption:
         }
 
     def viz(self):
-        pass
+        """visualize distro"""
 
 
 class GymSim: # monte carlo sim for openai gym
