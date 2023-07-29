@@ -6,6 +6,7 @@ from models.monte_carlo import MonteCarloOption, GymSim
 
 from polygon import Polygon
 
+
 st.set_page_config(layout="wide", page_title="Options Pricing", page_icon=":gear:")
 st.title('Quantitative Options Pricing') 
 st.caption('Via Black Scholes, Binomial Trees, and Monte Carlo Sampling')
