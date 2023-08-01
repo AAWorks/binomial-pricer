@@ -36,7 +36,7 @@ class MonteCarloOption:
         """visualize distro"""
 
 
-class GymSim: # monte carlo sim for openai gym
+class BasicSim: # monte carlo sim for dqn model
     def __init__(self, environment, policy, episodes=10):
         self._environment = environment
         self._policy = policy
