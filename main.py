@@ -4,7 +4,7 @@ from models.binomial_tree import BinomialTreeOption
 from models.black_scholes import BlackScholesOption
 from models.monte_carlo import MonteCarloOption, BasicSim
 
-from openai_env import Env
+from openai_env import OptionEnv
 from models.baseline_tf_dqn import BaselineModel
 from models.torch_dqn import Model
 
@@ -17,10 +17,12 @@ st.caption('Via Black Scholes, Binomial Trees, and Monte Carlo Sampling')
 st.caption("Alejandro Alonso and Roman Chenoweth")
 
 
-binomial, blk = st.tabs(["Binomial Model", "Black Scholes"])
+binomial, blk, baseline_env = st.tabs(["Binomial Model", "Black Scholes", "Baseline Option Price Visualization"])
 
 with binomial:
     st.info("Binomial Options Pricing")
 with blk:
     st.info("Black Scholes Model for European Options Pricing")
-
+with baseline_env:
+    test_env = OptionEnv()
+    ex = test_env.simulate_price_data()

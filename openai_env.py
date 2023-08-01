@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import datetime
 
-class Env:
+class OptionEnv:
     def __init__(self, spot=100.0, strike=100.0, r=0.02, sigma=0.20, today=datetime.date.today(), maturity=None): 
         self._spot = spot
         self._strike = strike
@@ -45,3 +45,15 @@ class Env:
         self._s_new = self._spot
         tao = 1.0 - self._day_step / self._days        # time to maturity, in unit of years
         return [self.S1, tao]
+
+    def simulate_price_data(self):
+        tmp = self.reset()
+
+        sim_prices = []
+        sim_prices.append(tmp[0])
+        for _ in range(365):
+            action = 0
+            s_next, reward, done, info = self.step(action)
+            sim_prices.append(s_next[0])
+        
+        return sim_prices
