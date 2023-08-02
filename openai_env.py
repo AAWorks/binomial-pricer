@@ -38,13 +38,13 @@ class OptionEnv(gym.Env):
 
         tao = 1.0 - self._day_step / self.days # time remaining in yrs
 
-        return np.array([self.S1, tao]), reward, done, {}
+        return np.array([self._s_new, tao]), reward, done, {}
 
     def reset(self):
         self._day_step = 0
         self._s_new = self._spot
         tao = 1.0 - self._day_step / self._days        # time to maturity, in unit of years
-        return [self.S1, tao]
+        return [self._s_new, tao]
 
     def simulate_price_data(self):
         tmp = self.reset()
