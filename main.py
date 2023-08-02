@@ -13,16 +13,18 @@ from polygon import Polygon
 
 st.set_page_config(layout="wide", page_title="Options Pricing", page_icon=":gear:")
 st.title('Quantitative Options Pricing') 
-st.caption('Via Black Scholes, Binomial Trees, and Monte Carlo Sampling')
+st.caption('Via Black Scholes, Binomial Trees, and a DQN Model boosted w/ Monte Carlo Sampling')
 st.caption("Alejandro Alonso and Roman Chenoweth")
 
 
-binomial, blk, baseline_env = st.tabs(["Binomial Model", "Black Scholes", "Baseline Option Price Visualization"])
+option_filter, dqn, binomial, blk = st.tabs(["Options Filter", "Deep Q-Network Model", "PyTorch-based Black Scholes Model", "QuantLib Binomial Model"])
 
+with option_filter:
+    st.info("Query Options Data")
+with dqn:
+    test_env = OptionEnv()
+    ex = test_env.simulate_price_data()
 with binomial:
     st.info("Binomial Options Pricing")
 with blk:
     st.info("Black Scholes Model for European Options Pricing")
-with baseline_env:
-    test_env = OptionEnv()
-    ex = test_env.simulate_price_data()
