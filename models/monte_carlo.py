@@ -36,24 +36,18 @@ class MonteCarloOption:
         """visualize distro"""
 
 
-class BasicSim: # monte carlo sim for dqn model
-    def __init__(self, environment, policy, episodes=10):
-        self._environment = environment
-        self._policy = policy
-        self._episodes = episodes
-
-    def _simulate_ep(self, time_step, base_return=0.0):
-        while not time_step.is_last():
-            action_step = self._policy.action(time_step)
-            time_step = self._environment.step(action_step.action)
-            base_return += time_step.reward
-        
-        return base_return
+def _simulate_ep(policy, env, time_step, base_return=0.0):
+    while not time_step.is_last():
+        action_step = policy.action(time_step)
+        time_step = env.step(action_step.action)
+        base_return += time_step.reward
     
-    def _simulate_eps(self):
-        step = self._environment.reset()
-        return sum([self._simulate_ep(step) for _ in range(self._episodes)])
+    return base_return
 
-    def run_sim(self, base_return=0.0):
-        avg_return = (base_return + self._simulate_eps()) / self._episodes
-        return avg_return.numpy()[0] #tf dqn agent method
+def _simulate_eps(policy, env, eps):
+    step = env.reset()
+    return sum([_simulate_ep(policy, env, step) for _ in range(eps)])
+
+def dqn_sim(policy, env, eps=10, base_return=0.0):
+    avg_return = (base_return + _simulate_eps(policy, env, eps)) / eps
+    return avg_return.numpy()[0] #tf dqn agent method

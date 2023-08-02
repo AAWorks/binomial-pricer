@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import datetime
 
-class OptionEnv:
+class OptionEnv(gym.Env):
     def __init__(self, spot=100.0, strike=100.0, r=0.02, sigma=0.20, today=datetime.date.today(), maturity=None): 
         self._spot = spot
         self._strike = strike
@@ -53,7 +53,7 @@ class OptionEnv:
         sim_prices.append(tmp[0])
         for _ in range(365):
             action = 0
-            s_next, reward, done, info = self.step(action)
+            s_next, _, _, _ = self.step(action)
             sim_prices.append(s_next[0])
         
         return sim_prices
