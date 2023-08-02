@@ -1,6 +1,6 @@
 # Options Pricing for US and EU Markets
 
-### US Binomial Pricing & EU Black-Scholes
+### Binomial, Black Scholes, Monte Carlo, DQN
 ---
 Alejandro Alonso and Roman Chenoweth
 
