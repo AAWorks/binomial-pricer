@@ -27,16 +27,16 @@ class OptionEnv(gym.Env):
             reward = max(self._strike - self._s_new, 0.0) * np.exp(-self._r * self._float_time * (self._day_step / self._days))
             done = True
         else: # hold opt
-            if self._day_step == self._days: # if at maturity
-                reward = max(self._strike - self._s_new, 0.0) * np.exp(-self._r * self._time)
+            if self._day_step == self._float_time: # if at maturity
+                reward = max(self._strike - self._s_new, 0.0) * np.exp(-self._r * self._float_time)
                 done = True
             else: # check tmr
                 reward = 0
-                self._s_new = self._s_new * np.exp((self._rate - 0.5 * self._sigma ** 2) * (self._time / self._days) + self._sigma * np.sqrt(self._time / self._days) * np.random.normal())
+                self._s_new = self._s_new * np.exp((self._r - 0.5 * self._sigma ** 2) * (self._float_time / self._days) + self._sigma * np.sqrt(self._float_time / self._days) * np.random.normal())
                 self._day_step += 1
                 done = False
 
-        tao = 1.0 - self._day_step / self.days # time remaining in yrs
+        tao = 1.0 - self._day_step / self._days # time remaining in yrs
 
         return np.array([self._s_new, tao]), reward, done, {}
 
@@ -53,7 +53,7 @@ class OptionEnv(gym.Env):
         sim_prices.append(tmp[0])
         for _ in range(365):
             action = 0
-            s_next, _, _, _ = self.step(action)
+            s_next, _, _, _ = self.single_step(action)
             sim_prices.append(s_next[0])
         
         return sim_prices
