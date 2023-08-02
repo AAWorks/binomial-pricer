@@ -127,6 +127,13 @@ class TFAModel:
     
         return log, returns
     
+    def train_iteration_dict(self, returns):
+        iterations = range(0, self._num_iterations + 1, self._eval_interval)
+        return {
+            "Iterations": iterations,
+            "Average Return": returns
+        }
+    
     def npv(self):
         return dqn_sim(self._eval_env, self._agent.policy, eps=2_000)
 
