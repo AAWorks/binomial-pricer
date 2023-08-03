@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 
 from utils.tickers import read_tickers
-from utils.db_wrapper import clear_tables, add_rows
+from utils.db_wrapper import clear_table, add_rows
 
 class Polygon:
     _headers: dict
@@ -49,6 +49,6 @@ class Polygon:
         return pd.concat(all_ticker_options_data).sort_index(kind='merge')
 
     def store_eod_data(self):
-        clear_tables()
-        eod_data = pd.read_json(self._get_eod_data())
+        clear_table()
+        eod_data = pd.read_json(self._get_eod_data(read_tickers()))
         add_rows(eod_data)

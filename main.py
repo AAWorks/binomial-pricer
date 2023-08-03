@@ -15,17 +15,16 @@ st.set_page_config(layout="wide", page_title="Options Pricing", page_icon=":gear
 st.title('Quantitative Options Pricing') 
 st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep Q-Network Model | By Alejandro Alonso and Roman Chenoweth')
 
-option_filter, example, dqn, binomial, blk = st.tabs(["Options Filter", "Example Runs", "Deep Q-Network Model", "PyTorch-based Black Scholes Model", "QuantLib Binomial Model"])
+nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "About the Deep Q-Network Model"])
 
-with option_filter:
-    st.info("Query Options Data")
-with example:
+with nasdaq:
+    st.info("Price Options from the NASDAQ-100")
+with american:
+    st.info("Price a Custom American Option")
+with eu:
+    st.info("Price a Custom European Option")
+with dqn:
+    st.info("About the DQN")
     test_env = OptionEnv()
     ex = test_env.simulate_price_data()
     st.line_chart(ex)
-with dqn:
-    st.info("Deep Q-Network Model")
-with binomial:
-    st.info("Binomial Options Pricing")
-with blk:
-    st.info("Black Scholes Model for European Options Pricing")
