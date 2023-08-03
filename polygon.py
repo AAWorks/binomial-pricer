@@ -1,4 +1,5 @@
 import requests
+import pandas as pd
 
 class Polygon:
     _headers: dict
@@ -21,11 +22,20 @@ class Polygon:
     def _get_req_url(self, extension: str = ""):
         return self._base_url + extension
 
-    def query(self, query: str):
+    def _query(self, query: str):
         pass
     
-    def option(self, ticker, date, position):
+    def _option(self, ticker, date, position):
         pass
 
-    def options(self, ticker, start_date, end_date=None, position=None):
+    def _options(self, ticker, start_date, end_date=None, position=None):
         pass
+
+    def _get_eod_data(self):
+        pass
+
+    def store_eod_data(self, db):
+        db.delete_all("options")
+        
+        for contract in self._get_eod_data():
+            
