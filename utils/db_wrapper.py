@@ -34,5 +34,6 @@ def add_rows(dataframe : pd.DataFrame):
 def read_rows(ticker): 
     return pd.read_sql_query(f"from options select * where ticker = {ticker}")
 
-def clear_tables():
+def clear_table():
     db.delete_all("options")
+    
