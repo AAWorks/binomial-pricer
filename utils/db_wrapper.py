@@ -1,6 +1,7 @@
 from notanorm import SqliteDb 
 from tickers import read_tickers
 import yfinance as yf
+import pandas as pd
 # from notanorm import MysqlDb 
 
 # accepts all the same parameters as sqlite3.connect
@@ -23,3 +24,14 @@ def add_row(underlying_ticker, ticker, contract_type, expiration_date, strike_pr
         raise Exception("No Price Dict")
 
     db.insert("options", underlying_ticker=underlying_ticker, ticker=ticker, contract_type=contract_type, expiration_date=expiration_date, srtike_price=strike_price, spot_price=price_dict[underlying_ticker])
+    
+    
+def add_rows(dataframe : pd.DataFrame):
+    for index, row in dataframe.iterrows():
+        add_row("options", row["underlying_ticker", row["ticker"], row["contract_type"], row["expiration_date"], row["strike_price"], prict_dict[row["underlying_ticker"]]])
+
+def read_rows(ticker): 
+    return pd.read_sql_query(f"from options select * where ticker = {ticker}")
+
+def clear_tables():
+    db.delete_all("options")
