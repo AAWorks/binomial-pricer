@@ -1,6 +1,10 @@
 import time
+import sqlite3
 import streamlit as st
 st.set_page_config(layout="wide", page_title="Options Pricing", page_icon=":chart:")
+
+from streamlit_extras.mandatory_date_range import date_range_picker
+from datetime import date
 
 from models.binomial_tree import BinomialTreeOption
 from models.black_scholes import BlackScholesOption
@@ -12,12 +16,27 @@ from models.torch_dqn import Model
 
 from polygon import Polygon
 from utils.tickers import read_tickers
+from utils.db_wrapper import read_rows, read_rows_of_ticker
 
 @st.cache_data
 def get_tickers():
     return read_tickers()
 
+test_env = OptionEnv()
+@st.cache_data
+def env_ex(_test):
+    return _test.simulate_price_data()
+
+test_sim_data = env_ex(test_env)
+
 ALL_TICKERS = get_tickers()
+ALL_MODELS = {
+    "Binomial Tree": BinomialTreeOption,
+    "Black Scholes": BlackScholesOption,
+    "Monte Carlo": MonteCarloOption,
+    "Deep Q-Network": TFAModel
+}
+
 
 st.title('Quantitative Options Pricing') 
 st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep Q-Network Model | By Alejandro Alonso and Roman Chenoweth')
@@ -29,18 +48,53 @@ with nasdaq:
     with st.form("nasdaq-price"):
         ticker = st.selectbox("Underlying Ticker", ALL_TICKERS)
         model = st.selectbox("Model", ["All Models", "Binomial Tree", "Monte Carlo", "Deep Q-Network"])
-        model_name = "all models" if model == "All Models" else f"a {model} model"
         submit = st.form_submit_button("Calculate Price", use_container_width=True)
 
     if submit:
+        st.info(f"{ticker} Options Data - Pulled {date.today()}")
+        st.dataframe(read_rows_of_ticker(sqlite3.Connection("data/options_data.db"), ticker))
+        model_name = "all models" if model == "All Models" else f"a {model} model"
         with st.spinner(f"Pricing {ticker} option spread using {model_name}..."):
             time.sleep(3)
 with american:
     st.info("Price a Custom American Option")
+    with st.form("american-price"):
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        opttype = col1.selectbox("Option Type", ["C", "P"])
+        s0 = float(col2.number_input("Spot Price"))
+        k = float(col3.number_input("Strike Price"))
+        volatility = float(col4.number_input("Volatility"))
+        d = float(col6.number_input("Dividend Rate"))
+        risk_free_r = float(col5.number_input("Risk Free Rate"))
+        cola, colb = st.columns(2)
+        with cola:
+            date1, date2 = date_range_picker("Purchase-Maturity Datespan")
+        model = colb.selectbox("Model", ["All Models", "Binomial Tree", "Monte Carlo", "Deep Q-Network"])
+        submit = st.form_submit_button("Calculate Price", use_container_width=True)
+    
+    if submit:
+        model_name = "all models" if model == "All Models" else f"a {model} model"
+        with st.spinner(f"Pricing {ticker} option spread using {model_name}..."):
+            time.sleep(3)
 with eu:
     st.info("Price a Custom European Option")
+    with st.form("euro-price"):
+        col1, col2, col3, col4, col5 = st.columns(5)
+        opttype = col1.selectbox("Option Type", ["C", "P"])
+        s0 = float(col2.number_input("Spot Price"))
+        k = float(col3.number_input("Strike Price"))
+        volatility = float(col4.number_input("Volatility"))
+        risk_free_r = float(col5.number_input("Risk Free Rate"))
+        cola, colb = st.columns(2)
+        with cola:
+            date1, date2 = date_range_picker("Purchase-Maturity Datespan")
+        model = colb.selectbox("Model", ["All Models", "Black Scholes", "Monte Carlo", "Deep Q-Network"])
+        submit = st.form_submit_button("Calculate Price", use_container_width=True)
+    
+    if submit:
+        model_name = "all models" if model == "All Models" else f"a {model} model"
+        with st.spinner(f"Pricing {ticker} option spread using {model_name}..."):
+            time.sleep(3)
 with dqn:
     st.info("About the DQN")
-    test_env = OptionEnv()
-    ex = test_env.simulate_price_data()
-    st.line_chart(ex)
+    st.line_chart(test_sim_data)

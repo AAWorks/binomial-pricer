@@ -1,5 +1,6 @@
 from notanorm import SqliteDb 
 from utils.tickers import read_tickers
+
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
@@ -24,15 +25,18 @@ def add_row(underlying_ticker, ticker, contract_type, expiration_date, strike_pr
     if price_dict is None:
         raise Exception("No Price Dict")
     date = datetime.strptime(expiration_date, '%Y-%m-%d')
-    db.insert("options", underlying_ticker=underlying_ticker, ticker=ticker, contract_type=contract_type, expiration_date=date, srtike_price=strike_price, spot_price=price_dict[underlying_ticker])
+    db.insert("options", underlying_ticker=underlying_ticker, ticker=ticker, contract_type=contract_type, expiration_date=date, strike_price=strike_price, spot_price=price_dict[underlying_ticker])
     
     
-def add_rows(dataframe : pd.DataFrame):
-    for index, row in dataframe.iterrows():
-        add_row("options", row["underlying_ticker", row["ticker"], row["contract_type"], row["expiration_date"], row["strike_price"], prict_dict[row["underlying_ticker"]]])
+def add_rows(dataframe : pd.DataFrame, price_dict=None):
+    for _, row in dataframe.iterrows():
+        add_row("options", row["underlying_ticker"], row["ticker"], row["contract_type"], row["expiration_date"], row["strike_price"], price_dict)
 
-def read_rows(ticker): 
-    return pd.read_sql_query(f"from options select * where ticker = {ticker}")
+def read_rows_of_ticker(con, ticker): 
+    return pd.read_sql_query(f"SELECT * FROM options WHERE ticker = {ticker}", con)
+
+def read_rows(con): 
+    return pd.read_sql_query(f"SELECT * FROM options", con)
 
 def clear_table():
     db.delete_all("options")

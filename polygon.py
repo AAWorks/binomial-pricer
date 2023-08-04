@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 
 from utils.tickers import read_tickers
-from utils.db_wrapper import clear_table, add_rows
+from utils.db_wrapper import clear_table, add_rows, current_prices
 
 class Polygon:
     _headers: dict
@@ -51,4 +51,4 @@ class Polygon:
     def store_eod_data(self):
         clear_table()
         eod_data = pd.read_json(self._get_eod_data(read_tickers()))
-        add_rows(eod_data)
+        add_rows(eod_data, current_prices())
