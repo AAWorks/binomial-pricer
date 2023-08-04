@@ -1,5 +1,5 @@
 from notanorm import SqliteDb 
-from tickers import read_tickers
+from utils.tickers import read_tickers
 import yfinance as yf
 import pandas as pd
 from datetime import datetime
