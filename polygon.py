@@ -1,4 +1,4 @@
-import requests, json
+import requests
 import pandas as pd
 
 from utils.tickers import read_tickers
@@ -27,7 +27,7 @@ class Polygon:
 
     def _query(self, query: str):
         full_query = self._get_req_url(query)
-        return requests.request(full_query, headers=self._headers)
+        return requests.request("GET", url=full_query, headers=self._headers)
     
     def _options_query(self, query: str):
         return self._query(f"v3/reference/options/contracts?{query}")
@@ -45,7 +45,7 @@ class Polygon:
     def _get_eod_options_data(self, tickers):
         all_ticker_options_data = []
         for ticker in tickers:
-            json_data = self._options(ticker)
+            json_data = self._options(ticker).json()
             ticker_data = pd.read_json(json_data)
             all_ticker_options_data.append(ticker_data)
         
@@ -55,7 +55,7 @@ class Polygon:
         ticker_prices = {}
         for ticker in tickers:
             query = f"v2/aggs/ticker/{ticker}/prev?adjusted=true"
-            previous_day_details = json.load(self._query(query))
+            previous_day_details = self._query(query).json()
             price_results = previous_day_details["results"][0]
             
             if "vw" in price_results:
@@ -67,7 +67,7 @@ class Polygon:
 
     def exchange_status(self, exchange): # i.e. nasdaq -> open, closed, after-hours
         query = "v1/marketstatus/now?"
-        market_details = json.load(self._query(query))
+        market_details = self._query(query).json()
         return market_details["exchanges"][exchange] 
 
     def store_eod_data(self, use_polygon_for_stock_prices = False):
