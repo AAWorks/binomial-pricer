@@ -12,7 +12,6 @@ from models.monte_carlo import MonteCarloOption
 
 from openai_env import OptionEnv
 from models.baseline_tf_dqn import TFAModel
-from models.torch_dqn import Model
 
 from polygon import Polygon
 from utils.tickers import read_tickers
