@@ -47,7 +47,7 @@ NASDAQ_STATUS = check_nasdaq_status()
 st.title('Quantitative Options Pricing') 
 st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep Q-Network Model | By Alejandro Alonso and Roman Chenoweth')
 
-nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "About the Deep Q-Network Model"])
+nasdaq, american, eu, dqn, pull = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "About the Deep Q-Network Model", "Re-Pull Data"])
 
 with nasdaq:
     st.info("Price Options from the NASDAQ-100")
@@ -116,3 +116,15 @@ with eu:
 with dqn:
     st.info("About the DQN")
     st.line_chart(test_sim_data)
+
+with pull:
+    st.warning("Pulling new data with our key may take up to half an hour")
+    with st.form("tmp_pull"):
+        tmpkey = st.text_input("Your Polygon.io Key (Leave Empty If Using Ours)")
+        submitted = st.form_submit_button("Pull", use_container_width=True)
+    
+    if submitted:
+        key = tmpkey if tmpkey.strip() != "" else None
+
+        with st.spinner("Pulling..."):
+            Polygon(key=key).store_eod_data(use_polygon_for_stock_prices=True)

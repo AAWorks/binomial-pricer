@@ -1,4 +1,4 @@
-import requests
+import requests, time
 import pandas as pd
 
 from utils.tickers import read_tickers
@@ -8,9 +8,10 @@ class Polygon:
     _headers: dict
     _base_url: str
 
-    def __init__(self):
-        with open('data/polygon.txt', 'r') as keyfile:
-            key = keyfile.readline().strip()
+    def __init__(self, key=None):
+        if key is None:
+            with open('data/polygon.txt', 'r') as keyfile:
+                key = keyfile.readline().strip()
 
         self._headers = {
             'Authorization': f'Bearer {key}'
@@ -30,6 +31,7 @@ class Polygon:
         return requests.request("GET", url=full_query, headers=self._headers)
     
     def _options_query(self, query: str):
+        time.sleep(12)
         return self._query(f"v3/reference/options/contracts?{query}")
 
     def _options(self, ticker, position="", expired=""):
@@ -46,7 +48,7 @@ class Polygon:
         all_ticker_options_data = []
         for ticker in tickers:
             json_data = self._options(ticker).json()
-            ticker_data = pd.read_json(json_data)
+            ticker_data = pd.DataFrame(json_data["results"])
             all_ticker_options_data.append(ticker_data)
         
         return pd.concat(all_ticker_options_data).sort_index(kind='merge')
@@ -72,7 +74,7 @@ class Polygon:
 
     def store_eod_data(self, use_polygon_for_stock_prices = False):
         clear_table()
-        eod_data = pd.read_json(self._get_eod_options_data(read_tickers()))
+        eod_data =self._get_eod_options_data(read_tickers())
         tickers = read_tickers()
 
         if not use_polygon_for_stock_prices:
