@@ -118,13 +118,14 @@ with dqn:
     st.line_chart(test_sim_data)
 
 with pull:
-    st.warning("Pulling new data with our key may take up to half an hour")
     with st.form("tmp_pull"):
-        tmpkey = st.text_input("Your Polygon.io Key (Leave Empty If Using Ours)")
+        tmpkey = st.text_input("Polygon.io Key")
+        pwd = st.text_input("Admin Passphrase")
         submitted = st.form_submit_button("Pull", use_container_width=True)
     
     if submitted:
         key = tmpkey if tmpkey.strip() != "" else None
 
-        with st.spinner("Pulling..."):
-            Polygon(key=key).store_eod_data(use_polygon_for_stock_prices=True)
+        if pwd == "123457":
+            with st.spinner("Pulling..."):
+                Polygon(key=key).store_eod_data(use_polygon_for_stock_prices=True)
