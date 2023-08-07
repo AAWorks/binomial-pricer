@@ -12,9 +12,9 @@ db = SqliteDb("data/options_data.db")
 def _setup_db():
     db.query("create table options (underlying_ticker text, ticker text, contract_type text, expiration_date datetime, strike_price integer, spot_price float)")
 
-def current_prices() -> dict:
+def yf_current_prices(tickers) -> dict:
     price_dict = {}
-    for ticker in read_tickers():
+    for ticker in tickers:
         stock = yf.Ticker(ticker).history()
         current_price = stock['Close'].iloc[-1]
         price_dict[ticker] = current_price

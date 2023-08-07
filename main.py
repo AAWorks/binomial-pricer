@@ -69,7 +69,7 @@ with american:
         cola, colb = st.columns(2)
         with cola:
             date1, date2 = date_range_picker("Purchase-Maturity Datespan")
-        model = colb.selectbox("Model", ["All Models", "Binomial Tree", "Monte Carlo", "Deep Q-Network"])
+        model = colb.selectbox("Model", ["All Models", "Binomial Tree", "Deep Q-Network"])
         submit = st.form_submit_button("Calculate Price", use_container_width=True)
     
     if submit:
@@ -88,7 +88,7 @@ with eu:
         cola, colb = st.columns(2)
         with cola:
             date1, date2 = date_range_picker("Purchase-Maturity Datespan")
-        model = colb.selectbox("Model", ["All Models", "Black Scholes", "Monte Carlo", "Deep Q-Network"])
+        model = colb.selectbox("Model", ["All Models", "Black Scholes", "Monte Carlo"])
         submit = st.form_submit_button("Calculate Price", use_container_width=True)
     
     if submit:
