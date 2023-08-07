@@ -65,7 +65,7 @@ class Polygon:
         
         return ticker_prices
 
-    def exchange_status(self, exchange):
+    def exchange_status(self, exchange): # i.e. nasdaq -> open, closed, after-hours
         query = "v1/marketstatus/now?"
         market_details = json.load(self._query(query))
         return market_details["exchanges"][exchange] 
