@@ -23,7 +23,7 @@ ALL_MODELS = {
     "Monte Carlo": MonteCarloOption,
     "Deep Q-Network": TFAModel
 }
-POLYGON = Polygon()
+POLYGON = Polygon(yf_backup=True)
 
 @st.cache_data
 def get_tickers():
@@ -46,10 +46,10 @@ NASDAQ_STATUS = check_nasdaq_status()
 st.title('Quantitative Options Pricing') 
 st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep Q-Network Model | By Alejandro Alonso and Roman Chenoweth')
 
-nasdaq, american, eu, dqn, pull = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "About the Deep Q-Network Model", "Re-Pull Data"])
+nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "About the Deep Q-Network Model"])
 
 with nasdaq:
-    st.info("Price Options from the NASDAQ-100")
+    st.info("Pricing Options from the NASDAQ-100")
     title_status = NASDAQ_STATUS.title()
     message_type = {"open": st.success, "extended-hours": st.error, "closed": st.error} 
     message = {
@@ -59,6 +59,8 @@ with nasdaq:
     }
     
     message_type[NASDAQ_STATUS](message[NASDAQ_STATUS])
+    with st.expander("Note on Data Source"):
+        st.caption("This project was originally designed to use real-time data from Polygon.io. All the tooling is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use EOD data from Yahoo Finance.")
 
     if NASDAQ_STATUS == "open":
         with st.form("nasdaq-price"):
@@ -116,15 +118,15 @@ with dqn:
     st.info("About the DQN")
     st.line_chart(test_sim_data)
 
-with pull:
-    with st.form("tmp_pull"):
-        tmpkey = st.text_input("Polygon.io Key")
-        pwd = st.text_input("Admin Passphrase")
-        submitted = st.form_submit_button("Pull", use_container_width=True)
+# with pull:
+#     with st.form("tmp_pull"):
+#         tmpkey = st.text_input("Polygon.io Key")
+#         pwd = st.text_input("Admin Passphrase")
+#         submitted = st.form_submit_button("Pull", use_container_width=True)
     
-    if submitted:
-        key = tmpkey if tmpkey.strip() != "" else None
+#     if submitted:
+#         key = tmpkey if tmpkey.strip() != "" else None
 
-        if pwd == "123457":
-            with st.spinner("Pulling..."):
-                Polygon(key=key).store_eod_data(use_polygon_for_stock_prices=True)
+#         if pwd == "123457":
+#             with st.spinner("Pulling..."):
+#                 Polygon(key=key).store_eod_data()

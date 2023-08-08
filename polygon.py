@@ -1,14 +1,16 @@
 import requests, time
 import pandas as pd
+import yfinance as yf
 
 from utils.tickers import read_tickers
 from utils.db_wrapper import clear_table, add_rows, yf_current_prices
+
 
 class Polygon:
     _headers: dict
     _base_url: str
 
-    def __init__(self, key=None):
+    def __init__(self, key=None, yf_backup=False):
         if key is None:
             with open('data/polygon.txt', 'r') as keyfile:
                 key = keyfile.readline().strip()
@@ -18,7 +20,30 @@ class Polygon:
         }
 
         self._base_url = 'https://api.polygon.io/'
+        self._yf_backup = yf_backup
     
+    @property
+    def risk_free_rate(self):
+        def deannualize(annual_rate, periods=365):
+            return (1 + annual_rate) ** (1/periods) - 1
+
+        def get_risk_free_rate():
+            annualized = yf.download("^IRX")["Adj Close"]
+            daily = annualized.apply(deannualize)
+
+            return pd.DataFrame({"annualized": annualized, "daily": daily})    
+
+        rates = get_risk_free_rate()
+        return rates.tail()
+    
+    @property
+    def nasdaq_tickers(self):
+        return read_tickers()
+    
+    @property
+    def last_ticker_prices(self):
+        return yf_current_prices(self.nasdaq_tickers)
+
     @property
     def base_url(self):
         return self._base_url
@@ -34,7 +59,7 @@ class Polygon:
         time.sleep(12)
         return self._query(f"v3/reference/options/contracts?{query}")
 
-    def _options(self, ticker, position="", expired=""):
+    def _polygon_options(self, ticker, position="", expired=""):
         if position:
             position = f"&contract_type={position}"
         
@@ -43,11 +68,21 @@ class Polygon:
         
         query = f"underlying_ticker={ticker}{position}{expired}&limit=1000"
         return self._options_query(query)
+    
+    def _poly_eod_options_of_ticker(self, ticker):
+        json_data = self._polygon_options(ticker).json()
+        ticker_data = pd.DataFrame(json_data["results"])
+        prices = self._get_eod_stock_prices(self.nasdaq_tickers)
+        ticker_data["mark"] = prices[ticker]
+        ticker_data["price"] = prices[ticker]
+    
+    def _yf_eod_options_of_ticker(self, ticker):
+        return None
 
     def _get_eod_options_data(self, tickers):
         all_ticker_options_data = []
         for ticker in tickers:
-            json_data = self._options(ticker).json()
+            json_data = self._polygon_options(ticker).json()
             ticker_data = pd.DataFrame(json_data["results"])
             all_ticker_options_data.append(ticker_data)
         
@@ -72,14 +107,27 @@ class Polygon:
         market_details = self._query(query).json()
         return market_details["exchanges"][exchange] 
 
-    def store_eod_data(self, use_polygon_for_stock_prices = False):
+    def store_all_eod_data(self):
         clear_table()
-        eod_data =self._get_eod_options_data(read_tickers())
+
+        data_methods = {True: self._yf_get_eod_options_data, False: self._get_eod_options_data}
         tickers = read_tickers()
 
-        if not use_polygon_for_stock_prices:
+        eod_data = data_methods[self._yf_backup](tickers)
+
+        if self._yf_backup:
             current_stock_prices = yf_current_prices(tickers)
         else:
             current_stock_prices = self._get_eod_stock_prices(tickers)
 
         add_rows(eod_data, current_stock_prices)
+    
+    def get_eod_data_of_ticker(self, ticker):
+        scrape_methods = {True: self._yf_eod_options_of_ticker, False: self._poly_eod_options_of_ticker}
+
+        eod_data = scrape_methods[self._yf_backup](ticker)
+
+        return eod_data
+
+
+        
