@@ -93,7 +93,7 @@ with american:
     
     if submit:
         model_name = "all models" if model == "All Models" else f"a {model} model"
-        with st.spinner(f"Pricing {ticker} option spread using {model_name}..."):
+        with st.spinner(f"Pricing custom option spread using {model_name}..."):
             time.sleep(3)
 with eu:
     st.info("Price a Custom European Option")
@@ -112,7 +112,7 @@ with eu:
     
     if submit:
         model_name = "all models" if model == "All Models" else f"a {model} model"
-        with st.spinner(f"Pricing {ticker} option spread using {model_name}..."):
+        with st.spinner(f"Pricing custom option spread using {model_name}..."):
             time.sleep(3)
 with dqn:
     st.info("About the DQN")
