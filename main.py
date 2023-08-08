@@ -49,7 +49,7 @@ st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep 
 nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "About the Deep Q-Network Model"])
 
 with nasdaq:
-    st.info("Pricing Options from the NASDAQ-100")
+    st.info("Pricing Options from the NASDAQ-100 | Work In Progress")
     title_status = NASDAQ_STATUS.title()
     message_type = {"open": st.success, "extended-hours": st.error, "closed": st.error} 
     message = {
@@ -62,7 +62,7 @@ with nasdaq:
     with st.expander("Note on Data Source"):
         st.caption("This project was originally designed to use real-time data from Polygon.io. All the tooling is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use EOD data from Yahoo Finance.")
 
-    if NASDAQ_STATUS == "open":
+    if False: #NASDAQ_STATUS == "open":
         with st.form("nasdaq-price"):
             ticker = st.selectbox("Underlying Ticker", ALL_TICKERS)
             model = st.selectbox("Model", ["All Models", "Binomial Tree", "Monte Carlo", "Deep Q-Network"])
