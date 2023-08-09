@@ -1,39 +1,65 @@
 import torch
+from datetime import date, timedelta
 
 class MonteCarloOption:
-    def __init__(self, strike, stock, vol, time, risk_rate, dividend_rate):
-        self._vol = vol
-        self._time = time
-        self._r_rate = risk_rate
-        self._d_rate = dividend_rate
-        self._stock = stock
-        self._strike = strike
+    def __init__(self, 
+                 spot: float, 
+                 strike: float, 
+                 maturity: date, 
+                 implied_volatility: float,
+                 risk_free_rate: float):
+
+        self._spot = torch.tensor(spot, requires_grad=True)
+        self._strike = torch.tensor(strike, requires_grad=True)
+        self._time = torch.tensor((maturity - date.today()) / timedelta(days=365), requires_grad=True)
+        self._iv = torch.tensor(implied_volatility, requires_grad=True)
+        self._r = torch.tensor(risk_free_rate, requires_grad=True)
 
     @property
-    def price(self):
+    def strike_price(self): 
+        return self._strike
+
+    @property
+    def spot_price(self): 
+        return self._spot
+
+    @property
+    def time(self): 
+        return self._time
+
+    @property
+    def implied_volatility(self): 
+        return self._iv
+    
+    @property
+    def risk_free_rate(self):
+        return self._r
+
+    @property
+    def npv(self):
         torch.manual_seed(42)
         scenarios = 1000000
-        dW = self._vol * self._time ** 0.5 * torch.randn(size=(scenarios,))
-        r = torch.exp((self._r_rate - self._d_rate - self._vol * self._vol / 2) * self._time + dW)
+        dW = self._iv * self._time ** 0.5 * torch.randn(size=(scenarios,))
+        r = torch.exp((self._r - 0.0 - self._iv * self._iv / 2) * self._time + dW)
 
-        payoff = torch.max(self._strike - self._stock*r, torch.zeros(size=(scenarios,)))
-        return torch.mean(payoff) * torch.exp(-self._rate*self._time)
+        payoff = torch.max(self._strike - self._spot*r, torch.zeros(size=(scenarios,)))
+        return torch.mean(payoff) * torch.exp(-self._r*self._time)
     
     @property
     def greeks(self):
-        ov = self.price
+        ov = self.npv
         ov.backward()
         return {
-            "delta": self._stock.grad,
-            "rho": self._rate.grad,
-            "vega": self._vol.grad,
+            "delta": self._spot.grad,
+            "rho": self._r.grad,
+            "vega": self._iv.grad,
             "theta": self._time.grad,
-            "epsilon": self._dividend.grad,
+            "epsilon" : self._d.grad,
             "strike_greek": self._strike.grad
         }
 
-    def viz(self):
-        """visualize distro"""
+    def __str__(self):
+        return f"Option Price (Monte Carlo Pricing): ${self.npv}"
 
 
 def _simulate_ep(policy, env, time_step, base_return=0.0):

@@ -1,23 +1,30 @@
 import QuantLib as ql 
+from datetime import date
 
 class BinomialTreeOption:
-    def __init__(self, otype=ql.Option.Put, S=100, K=100, start=(1,1,2019), maturity=(1,1,2020), sigma=0.20, r=0.0, d=0.2):
-        self._option_data = (otype, K, S, sigma, r, d)
+    def __init__(self, 
+                 origin: str,
+                 otype: str, 
+                 s: float, 
+                 k: float, 
+                 maturity: date, 
+                 sigma: float, 
+                 r = float, 
+                 d = float):
+        self._origin = origin
+
+        otype = ql.Option.Call if otype == "C" else ql.Option.Put
+        self._option_data = (otype, k, s, sigma, r, d)
         
-        self._maturity_date = ql.Date(*maturity)
+        self._maturity_date = ql.Date.from_date(maturity)
         self._dc = ql.Actual365Fixed()
         self._calendar = ql.NullCalendar()
 
-        self._start_date = ql.Date(*start)
+        self._start_date = ql.Date().from_date(date.today())
         ql.Settings.instance().evaluationDate = self._start_date
 
-        self._euoption, self._usoption, self._bsmprocess = self._get_prices()
-
-        self._bs = self._euoption.NPV()
-        self._binom = self._usoption.NPV()
-        self._pnl = self._binom - self._bs
-    
-    def _get_prices(self):
+    @property
+    def _price_dict(self):
         otype, k, s, sigma, r, d = self._option_data
         payoff = ql.PlainVanillaPayoff(otype, k)
 
@@ -38,16 +45,19 @@ class BinomialTreeOption:
         binomial_engine = ql.BinomialVanillaEngine(bsm_process, "crr", 100)
         american_option.setPricingEngine(binomial_engine)
 
-        return european_option, american_option, bsm_process
+        return {"eu": european_option, "us": american_option, "bsm": bsm_process}
+    
+    @property
+    def npv(self):
+        return self._price_dict[self._origin].NPV()
+    
+    @property
+    def bsm(self):
+        return self._price_dict["bsm"]
 
     @property
-    def price(self): return self._binom
-
-    @property
-    def baseline(self): return self._bs
-
-    @property
-    def early_exercise_pnl(self): return self._pnl
+    def early_exercise_pnl(self): 
+        return self._price_dict["us"].NPV() - self._price_dict["eu"].NPV()
     
     def _binomial_price(option, bsm_process, steps):
         binomial_engine = ql.BinomialVanillaEngine(bsm_process, "crr", steps)
@@ -57,7 +67,10 @@ class BinomialTreeOption:
     def prices_over_time(self):
         eu_prices, am_prices = [], []
         for step in range(5, 200, 1):
-            eu_prices.append(self._binomial_price(self._euoption, self._bsmprocess, step))
-            am_prices.append(self._binomial_price(self._usoption, self._bsmprocess, step))
+            eu_prices.append(self._binomial_price(self._price_dict["eu"], self.bsm, step))
+            am_prices.append(self._binomial_price(self._price_dict["us"], self.bsm, step))
         
         return eu_prices, am_prices
+    
+    def __str__(self):
+        return f"Option Price (Binomial Tree Pricing): ${self.npv}"

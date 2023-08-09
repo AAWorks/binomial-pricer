@@ -137,3 +137,5 @@ class TFAModel:
     def npv(self):
         return dqn_sim(self._eval_env, self._agent.policy, eps=2_000)
 
+    def __str__(self):
+        return f"Option Price (Deep Q-Network Pricing): ${self.npv()}"

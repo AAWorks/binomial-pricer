@@ -10,24 +10,17 @@ class BlackScholesOption:
                  strike: float, 
                  maturity: date, 
                  implied_volatility: float,
-                 risk_free_rate: float):
+                 risk_free_rate: float,
+                 dividend_rate: float):
 
         self._option_type = option_type
 
-        self._spot = torch.Tensor(spot)
-        self._spot.requires_grad(True)
-
-        self._strike = torch.Tensor(strike)
-        self._strike.requires_grad(True)
-
-        self._time = torch.Tensor((maturity - date.today()) / timedelta(days=365))
-        self._time.requires_grad(True)
-
-        self._iv = torch.Tensor(implied_volatility)
-        self._iv.requires_grad(True)
-
-        self._r = torch.Tensor(risk_free_rate)
-        self._r.requires_grad(True)
+        self._spot = torch.tensor(spot, requires_grad=True)
+        self._strike = torch.tensor(strike, requires_grad=True)
+        self._time = torch.tensor((maturity - date.today()) / timedelta(days=365), requires_grad=True)
+        self._iv = torch.tensor(implied_volatility, requires_grad=True)
+        self._r = torch.tensor(risk_free_rate, requires_grad=True)
+        self._d = torch.tensor(dividend_rate, requires_grad=True)
 
         self._cdf = Normal(0,1).cdf
         self._pdf = lambda x: Normal(0,1).log_prob(x).exp()
@@ -55,10 +48,14 @@ class BlackScholesOption:
     @property
     def risk_free_rate(self):
         return self._r
+    
+    @property
+    def dividend_rate(self):
+        return self._d
 
     @property
-    def price(self):
-        d_1 = (1 / (self._iv * torch.sqrt(self._time))) * (torch.log(self._spot / self._strike) + (self._r + (torch.square(self._spot) / 2)) * self._time)
+    def npv(self):
+        d_1 = (1 / (self._iv * torch.sqrt(self._time))) * (torch.log(self._spot / self._strike) + (self._r + (torch.square(self._iv) / 2)) * self._time)
         d_2 = d_1 - self._iv * torch.sqrt(self._time)
         
         if self._option_type == "C":
@@ -70,8 +67,8 @@ class BlackScholesOption:
             return P
 
     @property
-    def standard_greeks(self):
-        self.price.backward()
+    def greeks(self):
+        self.npv.backward()
         spot = self._spot
 
         return {
@@ -79,6 +76,7 @@ class BlackScholesOption:
             "rho" : self._r.grad,
             "vega" : self._iv.grad,
             "theta" : self._time.grad,
+            "epsilon" : self._d.grad,
             "strike_greek" : self._strike.grad
         }
     
@@ -89,3 +87,6 @@ class BlackScholesOption:
         delta.backward()
 
         return spot.grad
+    
+    def __str__(self):
+        return f"Option Price (Black Scholes Model): ${self.npv}"

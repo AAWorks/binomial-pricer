@@ -24,17 +24,17 @@ class Polygon:
     
     @property
     def risk_free_rate(self):
-        def deannualize(annual_rate, periods=365):
+        def deannualize(annual_rate, periods=(365//4)):
             return (1 + annual_rate) ** (1/periods) - 1
 
         def get_risk_free_rate():
             annualized = yf.download("^IRX")["Adj Close"]
             daily = annualized.apply(deannualize)
 
-            return pd.DataFrame({"annualized": annualized, "daily": daily})    
+            return pd.DataFrame({"annualized": annualized, "trimonthly": daily})    
 
         rates = get_risk_free_rate()
-        return rates.tail()
+        return float(rates["trimonthly"].iloc[-1])
     
     @property
     def nasdaq_tickers(self):
@@ -128,6 +128,3 @@ class Polygon:
         eod_data = scrape_methods[self._yf_backup](ticker)
 
         return eod_data
-
-
-        
