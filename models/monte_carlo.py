@@ -3,17 +3,25 @@ from datetime import date, timedelta
 
 class MonteCarloOption:
     def __init__(self, 
+                 option_type: str,
                  spot: float, 
                  strike: float, 
                  maturity: date, 
                  implied_volatility: float,
-                 risk_free_rate: float):
+                 risk_free_rate: float,
+                 dividend_rate: float):
+        self._option_type = option_type
 
         self._spot = torch.tensor(spot, requires_grad=True)
         self._strike = torch.tensor(strike, requires_grad=True)
         self._time = torch.tensor((maturity - date.today()) / timedelta(days=365), requires_grad=True)
         self._iv = torch.tensor(implied_volatility, requires_grad=True)
         self._r = torch.tensor(risk_free_rate, requires_grad=True)
+        self._d = torch.tensor(dividend_rate, requires_grad=True)
+
+    @property
+    def option_type(self):
+        return self._option_type
 
     @property
     def strike_price(self): 
@@ -40,7 +48,7 @@ class MonteCarloOption:
         torch.manual_seed(42)
         scenarios = 1000000
         dW = self._iv * self._time ** 0.5 * torch.randn(size=(scenarios,))
-        r = torch.exp((self._r - 0.0 - self._iv * self._iv / 2) * self._time + dW)
+        r = torch.exp((self._r - self._d - self._iv * self._iv / 2) * self._time + dW)
 
         payoff = torch.max(self._strike - self._spot*r, torch.zeros(size=(scenarios,)))
         return torch.mean(payoff) * torch.exp(-self._r*self._time)

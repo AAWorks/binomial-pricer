@@ -34,7 +34,7 @@ def check_nasdaq_status():
 def get_custom_defaults():
     defaults = {}
     
-    defaults["maturity"] = date.today() + timedelta(days=1)
+    defaults["maturity"] = date.today() + timedelta(days=365)
     defaults["risk_free_rate"] = POLYGON.risk_free_rate
     defaults["spot"] = 100.0
     defaults["strike"] = 100.0
@@ -129,8 +129,9 @@ with eu:
                                         risk_free_rate=risk_free_r,
                                         dividend_rate=d)]
                 elif model == "Monte Carlo":
-                    opts = [MonteCarloOption(strike=k, stock=s0, 
-                                        vol=volatility, maturity=maturity, 
+                    opts = [MonteCarloOption(option_type=opttype,
+                                        strike=k, spot=s0, 
+                                        maturity=maturity, 
                                         implied_volatility=volatility,
                                         risk_free_rate=risk_free_r,
                                         dividend_rate=d)]
@@ -139,8 +140,8 @@ with eu:
                                         strike=k, maturity=maturity, 
                                         implied_volatility=volatility,
                                         risk_free_rate=risk_free_r),
-                            MonteCarloOption(strike=k, stock=s0, 
-                                        vol=volatility, maturity=maturity, 
+                            MonteCarloOption(option_type=opttype, strike=k, stock=s0, 
+                                        maturity=maturity, 
                                         implied_volatility=volatility,
                                         risk_free_rate=risk_free_r,
                                         dividend_rate=d)]
