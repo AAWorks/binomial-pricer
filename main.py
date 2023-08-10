@@ -83,7 +83,7 @@ with nasdaq:
                 time.sleep(3)
 
 with american:
-    st.info("Price a Custom American Option")
+    st.info("Price a Custom American Option | Work in Progress")
     with st.form("american-price"):
         col1, col2, col3, col4, col5, col6 = st.columns(6)
         opttype = col1.selectbox("Option Type", ["C", "P"])
@@ -93,14 +93,51 @@ with american:
         d = float(col6.number_input("Dividend Rate", DEFAULTS["dividend_rate"]))
         risk_free_r = float(col5.number_input("Risk Free Rate", DEFAULTS["risk_free_rate"]))
         cola, colb = st.columns(2)
-        cola.date_input("Maturity Date", DEFAULTS["maturity"])
+        maturity = cola.date_input("Maturity Date", DEFAULTS["maturity"])
         model = colb.selectbox("Model", ["Binomial Tree", "Monte Carlo", "Deep Q-Network", "All Models"])
         submit = st.form_submit_button("Calculate Price", use_container_width=True)
     
     if submit:
         model_name = "all models" if model == "All Models" else f"a {model} model"
         with st.spinner(f"Pricing custom option spread using {model_name}..."):
-            time.sleep(3)
+            if model == "Binomial Tree":
+                opts = [BinomialTreeOption(option_type=opttype, spot=s0, 
+                                    strike=k, maturity=maturity, 
+                                    implied_volatility=volatility,
+                                    risk_free_rate=risk_free_r,
+                                    dividend_rate=d)]
+            elif model == "Monte Carlo":
+                opts = [MonteCarloOption(option_type=opttype,
+                                    strike=k, spot=s0, 
+                                    maturity=maturity, 
+                                    implied_volatility=volatility,
+                                    risk_free_rate=risk_free_r,
+                                    dividend_rate=d)]
+            elif model == "Deep Q-Network":
+                opts = [MonteCarloOption(option_type=opttype,
+                                    strike=k, spot=s0, 
+                                    maturity=maturity, 
+                                    implied_volatility=volatility,
+                                    risk_free_rate=risk_free_r,
+                                    dividend_rate=d)]
+            else:
+                opts = [BinomialTreeOption(option_type=opttype, spot=s0, 
+                                    strike=k, maturity=maturity, 
+                                    implied_volatility=volatility,
+                                    risk_free_rate=risk_free_r),
+                        MonteCarloOption(option_type=opttype, strike=k, stock=s0, 
+                                    maturity=maturity, 
+                                    implied_volatility=volatility,
+                                    risk_free_rate=risk_free_r,
+                                    dividend_rate=d),
+                        MonteCarloOption(option_type=opttype,
+                                    strike=k, spot=s0, 
+                                    maturity=maturity, 
+                                    implied_volatility=volatility,
+                                    risk_free_rate=risk_free_r,
+                                    dividend_rate=d)]
+        for opt in opts:
+            st.success(str(opt))
 with eu:
     st.info("Price a Custom European Option")
     with st.form("euro-price"):
@@ -151,7 +188,7 @@ with eu:
 
 
 with dqn:
-    st.info("Deep Q-Network Breakdown")
+    st.info("Deep Q-Network Breakdown | Work in progress")
     st.line_chart(test_sim_data)
 
 # with pull:
