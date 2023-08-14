@@ -101,11 +101,11 @@ with american:
         model_name = "all models" if model == "All Models" else f"a {model} model"
         with st.spinner(f"Pricing custom option spread using {model_name}..."):
             if model == "Binomial Tree":
-                opts = [BinomialTreeOption(option_type=opttype, spot=s0, 
-                                    strike=k, maturity=maturity, 
-                                    implied_volatility=volatility,
-                                    risk_free_rate=risk_free_r,
-                                    dividend_rate=d)]
+                opts = [BinomialTreeOption(origin="us", option_type=opttype, s=s0, 
+                                    k=k, maturity=maturity, 
+                                    sigma=volatility,
+                                    r=risk_free_r,
+                                    d=d)]
             elif model == "Monte Carlo":
                 opts = [MonteCarloOption(option_type=opttype,
                                     strike=k, spot=s0, 
@@ -114,6 +114,7 @@ with american:
                                     risk_free_rate=risk_free_r,
                                     dividend_rate=d)]
             elif model == "Deep Q-Network":
+                env = OptionEnv(spot=s0, strike)
                 opts = [MonteCarloOption(option_type=opttype,
                                     strike=k, spot=s0, 
                                     maturity=maturity, 
@@ -121,10 +122,10 @@ with american:
                                     risk_free_rate=risk_free_r,
                                     dividend_rate=d)]
             else:
-                opts = [BinomialTreeOption(option_type=opttype, spot=s0, 
-                                    strike=k, maturity=maturity, 
-                                    implied_volatility=volatility,
-                                    risk_free_rate=risk_free_r),
+                opts = [BinomialTreeOption(origin="us", option_type=opttype, 
+                                           s=s0, k=k, maturity=maturity, 
+                                           sigma=volatility, r=risk_free_r, 
+                                           d=d),
                         MonteCarloOption(option_type=opttype, strike=k, stock=s0, 
                                     maturity=maturity, 
                                     implied_volatility=volatility,
