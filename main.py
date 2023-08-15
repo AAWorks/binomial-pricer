@@ -114,7 +114,7 @@ with american:
                                     risk_free_rate=risk_free_r,
                                     dividend_rate=d)]
             elif model == "Deep Q-Network":
-                env = OptionEnv(spot=s0, strike)
+                env = OptionEnv(spot=s0, strike=k, r=risk_free_r, sigma=volatility, maturity=maturity)
                 opts = [MonteCarloOption(option_type=opttype,
                                     strike=k, spot=s0, 
                                     maturity=maturity, 
