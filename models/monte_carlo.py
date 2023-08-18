@@ -50,7 +50,11 @@ class MonteCarloOption:
         dW = self._iv * self._time ** 0.5 * torch.randn(size=(scenarios,))
         r = torch.exp((self._r - self._d - self._iv * self._iv / 2) * self._time + dW)
 
-        payoff = torch.max(self._strike - self._spot*r, torch.zeros(size=(scenarios,)))
+        if self._option_type == "P":
+            payoff = torch.max(self._strike - self._spot*r, torch.zeros(size=(scenarios,)))
+        else:
+            payoff = torch.max(self._spot*r - self._strike, torch.zeros(size=(scenarios,)))
+
         return torch.mean(payoff) * torch.exp(-self._r*self._time)
     
     @property

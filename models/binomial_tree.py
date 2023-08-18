@@ -4,17 +4,17 @@ from datetime import date
 class BinomialTreeOption:
     def __init__(self, 
                  origin: str,
-                 otype: str, 
-                 s: float, 
-                 k: float, 
+                 option_type: str, 
+                 strike: float, 
+                 spot: float, 
                  maturity: date, 
-                 sigma: float, 
-                 r = float, 
-                 d = float):
+                 implied_volatility: float, 
+                 risk_free_rate: float, 
+                 dividend_rate: float):
         self._origin = origin
 
-        otype = ql.Option.Call if otype == "C" else ql.Option.Put
-        self._option_data = (otype, k, s, sigma, r, d)
+        otype = ql.Option.Call if option_type == "C" else ql.Option.Put
+        self._option_data = (otype, strike, spot, implied_volatility, risk_free_rate, dividend_rate)
         
         self._maturity_date = ql.Date.from_date(maturity)
         self._dc = ql.Actual365Fixed()
@@ -29,7 +29,7 @@ class BinomialTreeOption:
         payoff = ql.PlainVanillaPayoff(otype, k)
 
         european_exercise = ql.EuropeanExercise(self._maturity_date)
-        european_option = ql.VanillaOption(payoff, european_exercise)
+        baseline = ql.VanillaOption(payoff, european_exercise)
 
         american_exercise = ql.AmericanExercise(self._start_date, self._maturity_date)
         american_option = ql.VanillaOption(payoff, american_exercise)
@@ -40,12 +40,12 @@ class BinomialTreeOption:
         bsm_process = ql.BlackScholesMertonProcess(ql.QuoteHandle(ql.SimpleQuote(s)), d_ts, r_ts, sigma_ts)
 
         bsm73 = ql.AnalyticEuropeanEngine(bsm_process)
-        european_option.setPricingEngine(bsm73)
+        baseline.setPricingEngine(bsm73)
 
         binomial_engine = ql.BinomialVanillaEngine(bsm_process, "crr", 100)
         american_option.setPricingEngine(binomial_engine)
 
-        return {"eu": european_option, "us": american_option, "bsm": bsm_process}
+        return {"eu": baseline, "us": american_option, "bsm": bsm_process}
     
     @property
     def npv(self):
@@ -57,6 +57,8 @@ class BinomialTreeOption:
 
     @property
     def early_exercise_pnl(self): 
+        if self._origin == "eu":
+            return 0.0
         return self._price_dict["us"].NPV() - self._price_dict["eu"].NPV()
     
     def _binomial_price(option, bsm_process, steps):
@@ -74,3 +76,27 @@ class BinomialTreeOption:
     
     def __str__(self):
         return f"Option Price (Binomial Tree Pricing): ${self.npv}"
+
+class EUBinomialTreeOption(BinomialTreeOption):
+    def __init__(self, 
+                 option_type: str, 
+                 strike: float, 
+                 spot: float, 
+                 maturity: date, 
+                 implied_volatility: float, 
+                 risk_free_rate: float, 
+                 dividend_rate: float):
+        super().__init__("eu", option_type, strike, spot, maturity, 
+                       implied_volatility, risk_free_rate, dividend_rate)
+
+class USBinomialTreeOption(BinomialTreeOption):
+    def __init__(self, 
+                 option_type: str, 
+                 strike: float, 
+                 spot: float, 
+                 maturity: date, 
+                 implied_volatility: float, 
+                 risk_free_rate: float, 
+                 dividend_rate: float):
+        super().__init__("us", option_type, strike, spot, maturity, 
+                       implied_volatility, risk_free_rate, dividend_rate)

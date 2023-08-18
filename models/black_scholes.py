@@ -58,13 +58,13 @@ class BlackScholesOption:
         d_1 = (1 / (self._iv * torch.sqrt(self._time))) * (torch.log(self._spot / self._strike) + (self._r + (torch.square(self._iv) / 2)) * self._time)
         d_2 = d_1 - self._iv * torch.sqrt(self._time)
         
-        if self._option_type == "C":
-            C = self._cdf(d_1) * self._spot - self._cdf(d_2) * self._strike * torch.exp(-self._r * self._time)
-            return C
-            
-        elif self._option_type == "P":
-            P = self._cdf(-d_2) * self._strike * torch.exp(-self._r * self._time) - self._cdf(-d_1) * self._spot
+        if self._option_type == "P":
+            P = self._cdf(d_1) * self._spot - self._cdf(d_2) * self._strike * torch.exp(-self._r * self._time)
             return P
+            
+        elif self._option_type == "C":
+            C = self._cdf(-d_2) * self._strike * torch.exp(-self._r * self._time) - self._cdf(-d_1) * self._spot
+            return C
 
     @property
     def greeks(self):

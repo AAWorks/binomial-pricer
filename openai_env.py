@@ -43,15 +43,15 @@ class OptionEnv(gym.Env):
 
     @property
     def float_time(self):
-        return self._days / 365
+        return self.n_days / 365
     
     def single_step(self, action: int):
         if action == 1: # exercise opt
             reward = max(self._strike - self._s_new, 0.0) * np.exp(-self._r * self.float_time * (self._day_step / self.n_days))
             done = True
         else: # hold opt
-            if self._day_step == self._float_time: # if at maturity
-                reward = max(self._strike - self._s_new, 0.0) * np.exp(-self._r * self._)
+            if self._day_step == self.n_days: # if at maturity
+                reward = max(self._strike - self._s_new, 0.0) * np.exp(-self._r * self.float_time)
                 done = True
             else: # check tmr
                 reward = 0
