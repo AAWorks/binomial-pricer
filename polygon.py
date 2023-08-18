@@ -1,6 +1,8 @@
 import requests, time
 import pandas as pd
 import yfinance as yf
+from yahoo_fin import options
+from datetime import datetime
 
 from utils.tickers import read_tickers
 from utils.db_wrapper import clear_table, add_rows, yf_current_prices
@@ -77,7 +79,17 @@ class Polygon:
         ticker_data["price"] = prices[ticker]
     
     def _yf_eod_options_of_ticker(self, ticker):
-        return None
+        #today = datetime.now.strftime("%m/%d/%Y")
+        chain = options.get_options_chain(ticker)
+        calls = pd.DataFrame(chain["calls"])
+        puts = pd.DataFrame(chain["puts"])
+        calls["Type"] = "C"
+        puts["Type"] = "P"
+
+        ticker_data = pd.concat([calls, puts]).sort_index(kind='merge')
+        ticker_data.reset_index(inplace=True, drop=True)
+
+        return ticker_data
 
     def _get_eod_options_data(self, tickers):
         all_ticker_options_data = []

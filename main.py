@@ -11,7 +11,7 @@ from models.black_scholes import BlackScholesOption
 from models.monte_carlo import MonteCarloOption
 
 from openai_env import OptionEnv
-from models.baseline_tf_dqn import TFAModel
+from models.baseline_tfa_dqn import TFAModel
 
 from polygon import Polygon
 from utils.tickers import read_tickers
@@ -88,15 +88,15 @@ with nasdaq:
     with st.expander("Note on Data Source"):
         st.caption("This project was originally designed to use real-time data from Polygon.io. All the tooling is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use EOD data from Yahoo Finance.")
 
-    if False: #NASDAQ_STATUS == "open":
+    if True: # NASDAQ_STATUS == "open":
         with st.form("nasdaq-price"):
-            ticker = st.selectbox("Underlying Ticker", ALL_TICKERS)
-            model = st.selectbox("Model", ["All Models", "Binomial Tree", "Monte Carlo", "Deep Q-Network"])
+            cola, colb = st.columns(2)
+            ticker = cola.selectbox("Underlying Ticker", ALL_TICKERS)
+            model = colb.selectbox("Model", get_us_models())
             submit = st.form_submit_button("Calculate Price", use_container_width=True)
 
         if submit:
-            st.info(f"{ticker} Options Data - Pulled {date.today()}")
-            st.dataframe(read_rows_of_ticker(sqlite3.Connection("data/options_data.db"), ticker))
+            st.write(POLYGON.get_eod_data_of_ticker(ticker))
             model_name = "all models" if model == "All Models" else f"a {model} model"
             with st.spinner(f"Pricing {ticker} option spread using {model_name}..."):
                 time.sleep(3)
