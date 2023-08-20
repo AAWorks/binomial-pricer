@@ -1,7 +1,9 @@
 import torch
 from datetime import date, timedelta
 
-class MonteCarloOption:
+from models.abstract import Option
+
+class MonteCarloOption(Option):
     def __init__(self, 
                  option_type: str,
                  spot: float, 

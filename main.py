@@ -5,7 +5,7 @@ st.set_page_config(layout="wide", page_title="Options Pricing", page_icon=":gear
 
 from datetime import date, timedelta
 
-from models.abstract import Option, inputs
+from models.abstract import inputs
 from models.binomial_tree import EUBinomialTreeOption, USBinomialTreeOption
 from models.black_scholes import BlackScholesOption
 from models.monte_carlo import MonteCarloOption

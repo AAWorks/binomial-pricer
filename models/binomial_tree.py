@@ -1,7 +1,9 @@
 import QuantLib as ql 
 from datetime import date
 
-class BinomialTreeOption:
+from models.abstract import Option
+
+class BinomialTreeOption(Option):
     def __init__(self, 
                  origin: str,
                  option_type: str, 

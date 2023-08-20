@@ -3,7 +3,9 @@ from torch.distributions import Normal
 
 from datetime import date, timedelta
 
-class BlackScholesOption:
+from models.abstract import Option
+
+class BlackScholesOption(Option):
     def __init__(self, 
                  option_type: str, 
                  spot: float, 
