@@ -6,54 +6,11 @@ from datetime import date, timedelta
 from models.abstract import Option
 
 class BlackScholesOption(Option):
-    def __init__(self, 
-                 option_type: str, 
-                 spot: float, 
-                 strike: float, 
-                 maturity: date, 
-                 implied_volatility: float,
-                 risk_free_rate: float,
-                 dividend_rate: float):
-
-        self._option_type = option_type
-
-        self._spot = torch.tensor(spot, requires_grad=True)
-        self._strike = torch.tensor(strike, requires_grad=True)
-        self._time = torch.tensor((maturity - date.today()) / timedelta(days=365), requires_grad=True)
-        self._iv = torch.tensor(implied_volatility, requires_grad=True)
-        self._r = torch.tensor(risk_free_rate, requires_grad=True)
-        self._d = torch.tensor(dividend_rate, requires_grad=True)
+    def __init__(self, **kwargs):
+        super().__init__(kwargs, with_tensors=True)
 
         self._cdf = Normal(0,1).cdf
         self._pdf = lambda x: Normal(0,1).log_prob(x).exp()
-
-    @property
-    def option_type(self): 
-        return self._option_type
-
-    @property
-    def strike_price(self): 
-        return self._strike
-
-    @property
-    def spot_price(self): 
-        return self._spot
-
-    @property
-    def time(self): 
-        return self._time
-
-    @property
-    def implied_volatility(self): 
-        return self._iv
-    
-    @property
-    def risk_free_rate(self):
-        return self._r
-    
-    @property
-    def dividend_rate(self):
-        return self._d
 
     @property
     def npv(self):

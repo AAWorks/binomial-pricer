@@ -3,22 +3,16 @@ from datetime import date
 
 from models.abstract import Option
 
-class BinomialTreeOption(Option):
-    def __init__(self, 
-                 origin: str,
-                 option_type: str, 
-                 strike: float, 
-                 spot: float, 
-                 maturity: date, 
-                 implied_volatility: float, 
-                 risk_free_rate: float, 
-                 dividend_rate: float):
+class BaseBinomialTreeOption(Option):
+    def __init__(self, origin: str, **kwargs):
         self._origin = origin
 
-        otype = ql.Option.Call if option_type == "C" else ql.Option.Put
-        self._option_data = (otype, strike, spot, implied_volatility, risk_free_rate, dividend_rate)
+        super().__init__(kwargs)
+
+        otype = ql.Option.Call if self._option_type == "C" else ql.Option.Put
+        self._option_data = (otype, self._strike, self._spot, self._iv, self._r, self._d)
         
-        self._maturity_date = ql.Date.from_date(maturity)
+        self._maturity_date = ql.Date.from_date(self._maturity)
         self._dc = ql.Actual365Fixed()
         self._calendar = ql.NullCalendar()
 
@@ -54,6 +48,10 @@ class BinomialTreeOption(Option):
         return self._price_dict[self._origin].NPV()
     
     @property
+    def greeks(self):
+        return None
+    
+    @property
     def bsm(self):
         return self._price_dict["bsm"]
 
@@ -79,7 +77,7 @@ class BinomialTreeOption(Option):
     def __str__(self):
         return f"Option Price (Binomial Tree Pricing): ${self.npv}"
 
-class EUBinomialTreeOption(BinomialTreeOption):
+class EUBinomialTreeOption(BaseBinomialTreeOption):
     def __init__(self, 
                  option_type: str, 
                  strike: float, 
@@ -91,7 +89,7 @@ class EUBinomialTreeOption(BinomialTreeOption):
         super().__init__("eu", option_type, strike, spot, maturity, 
                        implied_volatility, risk_free_rate, dividend_rate)
 
-class USBinomialTreeOption(BinomialTreeOption):
+class USBinomialTreeOption(BaseBinomialTreeOption):
     def __init__(self, 
                  option_type: str, 
                  strike: float, 

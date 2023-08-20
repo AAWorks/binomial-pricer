@@ -1,11 +1,66 @@
 # Abstract Option Class
 import streamlit as st
 
-from abc import ABC
+from abc import ABC, abstractmethod
+from datetime import date, timedelta
+from torch import tensor
 
 
 class Option(ABC):
-    def __init__(self):
+    def __init__(self, params, with_tensors=False):
+        try:
+            params["maturity"] = (params["maturity"] - date.today()) / timedelta(days=365)
+
+            if with_tensors:
+                params = {k: tensor(v, requires_grad=True) for k, v in params.items() if k != "option_type"}
+
+            self._option_type = params["option_type"]
+            self._spot = params["spot"]
+            self._strike = params["strike"]
+            self._time = params["maturity"]
+            self._iv = params["implied_volatility"]
+            self._r = params["risk_free_rate"]
+            self._d = params["dividend_rate"]
+        except:
+            st.error("Missing Params")
+            raise Exception("Missing Params")
+
+    @property
+    def option_type(self):
+        return self._option_type
+
+    @property
+    def strike_price(self): 
+        return self._strike
+
+    @property
+    def spot_price(self): 
+        return self._spot
+
+    @property
+    def time(self): 
+        return self._time
+
+    @property
+    def implied_volatility(self): 
+        return self._iv
+    
+    @property
+    def risk_free_rate(self):
+        return self._r
+
+    @property
+    def dividend_rate(self):
+        return self._d
+
+    @property
+    @abstractmethod
+    def npv(self):
+        pass
+
+    @property
+    @abstractmethod
+    def greeks(self):
         pass
 
 def inputs(region_models, defaults):
