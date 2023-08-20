@@ -5,7 +5,7 @@ from models.abstract import Option
 
 class MonteCarloOption(Option):
     def __init__(self, **kwargs):
-        super().__init__(kwargs, with_tensors=True)
+        super().__init__(kwargs, with_tensors=True, name="Monte Carlo")
 
     @property
     def npv(self):
@@ -33,9 +33,6 @@ class MonteCarloOption(Option):
             "epsilon" : self._d.grad,
             "strike_greek": self._strike.grad
         }
-
-    def __str__(self):
-        return f"Option Price (Monte Carlo Pricing): ${self.npv}"
 
 
 def _simulate_ep(policy, env, time_step, base_return=0.0):

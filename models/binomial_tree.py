@@ -4,10 +4,10 @@ from datetime import date
 from models.abstract import Option
 
 class BaseBinomialTreeOption(Option):
-    def __init__(self, origin: str, **kwargs):
+    def __init__(self, origin: str, params):
         self._origin = origin
 
-        super().__init__(kwargs)
+        super().__init__(params, name=f"{origin.title()}-Centric Binomial Tree")
 
         otype = ql.Option.Call if self._option_type == "C" else ql.Option.Put
         self._option_data = (otype, self._strike, self._spot, self._iv, self._r, self._d)
@@ -73,30 +73,11 @@ class BaseBinomialTreeOption(Option):
             am_prices.append(self._binomial_price(self._price_dict["us"], self.bsm, step))
         
         return eu_prices, am_prices
-    
-    def __str__(self):
-        return f"Option Price (Binomial Tree Pricing): ${self.npv}"
 
 class EUBinomialTreeOption(BaseBinomialTreeOption):
-    def __init__(self, 
-                 option_type: str, 
-                 strike: float, 
-                 spot: float, 
-                 maturity: date, 
-                 implied_volatility: float, 
-                 risk_free_rate: float, 
-                 dividend_rate: float):
-        super().__init__("eu", option_type, strike, spot, maturity, 
-                       implied_volatility, risk_free_rate, dividend_rate)
+    def __init__(self, **kwargs):
+        super().__init__("eu", kwargs)
 
 class USBinomialTreeOption(BaseBinomialTreeOption):
-    def __init__(self, 
-                 option_type: str, 
-                 strike: float, 
-                 spot: float, 
-                 maturity: date, 
-                 implied_volatility: float, 
-                 risk_free_rate: float, 
-                 dividend_rate: float):
-        super().__init__("us", option_type, strike, spot, maturity, 
-                       implied_volatility, risk_free_rate, dividend_rate)
+    def __init__(self, **kwargs):
+        super().__init__("us", kwargs)

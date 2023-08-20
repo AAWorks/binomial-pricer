@@ -7,7 +7,7 @@ from models.abstract import Option
 
 class BlackScholesOption(Option):
     def __init__(self, **kwargs):
-        super().__init__(kwargs, with_tensors=True)
+        super().__init__(kwargs, with_tensors=True, name="Black Scholes")
 
         self._cdf = Normal(0,1).cdf
         self._pdf = lambda x: Normal(0,1).log_prob(x).exp()
@@ -46,6 +46,3 @@ class BlackScholesOption(Option):
         delta.backward()
 
         return spot.grad
-    
-    def __str__(self):
-        return f"Option Price (Black Scholes Model): ${self.npv}"

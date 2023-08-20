@@ -7,7 +7,9 @@ from torch import tensor
 
 
 class Option(ABC):
-    def __init__(self, params, with_tensors=False):
+    def __init__(self, params, with_tensors=False, name="BaseOption"):
+        self._name = name
+
         try:
             params["maturity"] = (params["maturity"] - date.today()) / timedelta(days=365)
 
@@ -56,12 +58,15 @@ class Option(ABC):
     @property
     @abstractmethod
     def npv(self):
-        pass
+        return -1
 
     @property
     @abstractmethod
     def greeks(self):
         pass
+
+    def __str__(self):
+        return f"Option Price ({self._name} Model): ${self.npv}"
 
 def inputs(region_models, defaults):
     col1, col2, col3, col4, col5, col6 = st.columns(6)
