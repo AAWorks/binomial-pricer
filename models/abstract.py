@@ -11,20 +11,21 @@ class Option(ABC):
         self._name = name
 
         try:
-            params["maturity"] = (params["maturity"] - date.today()) / timedelta(days=365)
+            self._maturity = params["maturity"]
+            params["maturity"] = (self._maturity - date.today()) / timedelta(days=365)
+            self._option_type = params["option_type"]
 
             if with_tensors:
                 params = {k: tensor(v, requires_grad=True) for k, v in params.items() if k != "option_type"}
 
-            self._option_type = params["option_type"]
             self._spot = params["spot"]
             self._strike = params["strike"]
             self._time = params["maturity"]
             self._iv = params["implied_volatility"]
             self._r = params["risk_free_rate"]
             self._d = params["dividend_rate"]
-        except:
-            st.error("Missing Params")
+        except Exception as e:
+            st.error(f"Missing Params - {e}")
             raise Exception("Missing Params")
 
     @property

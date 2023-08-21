@@ -7,7 +7,7 @@ class BaseBinomialTreeOption(Option):
     def __init__(self, origin: str, params):
         self._origin = origin
 
-        super().__init__(params, name=f"{origin.title()}-Centric Binomial Tree")
+        super().__init__(params, name=f"{origin.upper()}-Centric Binomial Tree")
 
         otype = ql.Option.Call if self._option_type == "C" else ql.Option.Put
         self._option_data = (otype, self._strike, self._spot, self._iv, self._r, self._d)
