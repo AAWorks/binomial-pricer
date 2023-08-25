@@ -22,11 +22,13 @@ class USOption(BaseOption):
         self._kwargs = kwargs
         super().__init__(kwargs)
     
-    def priced(self, model: str):
-        return self._model_map[model](self._kwargs)
-    
-    def dqn(self):
+    def _dqn(self):
         return None
+    
+    def priced(self, model: str):
+        if model == "Deep Q-Network":
+            return self._dqn()
+        return self._model_map[model](self._kwargs)
 
     def all(self):
         return [self.priced(model) for model in self._model_map.keys()]
