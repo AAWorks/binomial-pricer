@@ -9,4 +9,5 @@ def write_tickers():
 
 def read_tickers():
     with open("data/tickers.txt", "r") as tickers:
-        return tickers.readline().split(", ")
+        tickers = tickers.readline().split(", ")
+        return sorted(tickers)

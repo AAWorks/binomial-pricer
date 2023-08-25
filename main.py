@@ -102,6 +102,7 @@ with nasdaq:
                 else:
                     priced_options = [opt.priced(model)]
             
+            st.info(f"Contract Mark: {contract['Mark']}")
             for priced_option in priced_options:
                 st.success(str(priced_option))
 
