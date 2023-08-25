@@ -14,7 +14,6 @@ MODELS = {
 
 class USOption(BaseOption):
     _model_map = {
-        "Deep Q-Network": TFAModel,
         "Binomial Tree": USBinomialTree,
         "Monte Carlo": MonteCarlo
     }
@@ -25,6 +24,9 @@ class USOption(BaseOption):
     
     def priced(self, model: str):
         return self._model_map[model](self._kwargs)
+    
+    def dqn(self):
+        return None
 
     def all(self):
         return [self.priced(model) for model in self._model_map.keys()]
