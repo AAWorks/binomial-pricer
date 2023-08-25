@@ -1,13 +1,11 @@
 import torch
 from torch.distributions import Normal
 
-from datetime import date, timedelta
+from models.abstract import Model
 
-from models.abstract import Option
-
-class BlackScholesOption(Option):
-    def __init__(self, **kwargs):
-        super().__init__(kwargs, with_tensors=True, name="Black Scholes")
+class BlackScholes(Model):
+    def __init__(self, params):
+        super().__init__(params, with_tensors=True, name="Black Scholes")
 
         self._cdf = Normal(0,1).cdf
         self._pdf = lambda x: Normal(0,1).log_prob(x).exp()

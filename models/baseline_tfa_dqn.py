@@ -9,10 +9,10 @@ from tf_agents.replay_buffers import tf_uniform_replay_buffer      # replay buff
 from tf_agents.trajectories import trajectory              # s->s' trajectory
 from tf_agents.utils import common                       # loss function
 
-from models.abstract import Option
+from models.abstract import Model
 
 
-class TFAModel(Option):
+class TFAModel(Model):
     def __init__(self, 
                  environment,
                  iterations: int = 20000,

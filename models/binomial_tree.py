@@ -1,9 +1,9 @@
 import QuantLib as ql 
 from datetime import date
 
-from models.abstract import Option
+from models.abstract import Model
 
-class BaseBinomialTreeOption(Option):
+class BaseBinomialTree(Model):
     def __init__(self, origin: str, params):
         self._origin = origin
 
@@ -74,10 +74,10 @@ class BaseBinomialTreeOption(Option):
         
         return eu_prices, am_prices
 
-class EUBinomialTreeOption(BaseBinomialTreeOption):
-    def __init__(self, **kwargs):
-        super().__init__("eu", kwargs)
+class EUBinomialTree(BaseBinomialTree):
+    def __init__(self, params):
+        super().__init__("eu", params)
 
-class USBinomialTreeOption(BaseBinomialTreeOption):
-    def __init__(self, **kwargs):
-        super().__init__("us", kwargs)
+class USBinomialTree(BaseBinomialTree):
+    def __init__(self, params):
+        super().__init__("us", params)

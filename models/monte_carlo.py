@@ -1,10 +1,10 @@
 import torch
 
-from models.abstract import Option
+from models.abstract import Model
 
-class MonteCarloOption(Option):
-    def __init__(self, **kwargs):
-        super().__init__(kwargs, with_tensors=True, name="Monte Carlo")
+class MonteCarlo(Model):
+    def __init__(self, params):
+        super().__init__(params, with_tensors=True, name="Monte Carlo")
 
     @property
     def npv(self):
