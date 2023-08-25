@@ -3,7 +3,8 @@ import numpy as np
 import datetime
 
 class OptionEnv(gym.Env):
-    def __init__(self, spot: float, strike: float, r: float, sigma: float, today=datetime.date.today(), maturity=None): 
+    def __init__(self, **kwargs): 
+        today=datetime.date.today()
         self._spot = spot
         self._strike = strike
         self._r = r
