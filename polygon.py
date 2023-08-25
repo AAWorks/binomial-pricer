@@ -85,9 +85,9 @@ class Polygon:
 
         expiration = expiration.strftime("%m/%d/%Y")
         try:
-            chain = options.get_options_chain(ticker)
+            chain = options.get_options_chain(ticker, expiration)
         except ValueError:
-            return pd.DataFrame()
+            return None
 
         calls = pd.DataFrame(chain["calls"])
         puts = pd.DataFrame(chain["puts"])
@@ -131,6 +131,9 @@ class Polygon:
         query = "v1/marketstatus/now?"
         market_details = self._query(query).json()
         return market_details["exchanges"][exchange] 
+
+    def expiration_dates(self, ticker):
+        return options.get_expiration_dates(ticker.lower())
 
     def store_all_eod_data(self):
         clear_table()

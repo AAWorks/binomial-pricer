@@ -91,7 +91,7 @@ def inputs(region_models, defaults):
     d = float(col6.number_input("Dividend Rate", defaults["dividend_rate"]))
     r = float(col5.number_input("Risk Free Rate", defaults["risk_free_rate"]))
     cola, colb = st.columns(2)
-    maturity = cola.date_input("Maturity Date", defaults["maturity"])
+    maturity = cola.date_input("Maturity Date", defaults["custom_maturity"])
     model = colb.selectbox("Model", region_models)
     submit = st.form_submit_button("Calculate Price", use_container_width=True)
 

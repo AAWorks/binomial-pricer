@@ -1,9 +1,7 @@
-import time
-import sqlite3
 import streamlit as st
 st.set_page_config(layout="wide", page_title="Options Pricing", page_icon=":gear:")
 
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 
 from models.abstract import inputs
 from openai_env import OptionEnv
@@ -29,14 +27,15 @@ def check_nasdaq_status():
 
 @st.cache_data
 def get_custom_defaults():
-    defaults = {}
-    
-    defaults["maturity"] = date.today() + timedelta(days=365)
-    defaults["risk_free_rate"] = POLYGON.risk_free_rate
-    defaults["spot"] = 100.0
-    defaults["strike"] = 100.0
-    defaults["volatility"] = 0.20
-    defaults["dividend_rate"] = 0.01
+    defaults = {
+        "maturity": date.today() + timedelta(days=1),
+        "custom_maturity": date.today() + timedelta(days=365),
+        "risk_free_rate": POLYGON.risk_free_rate,
+        "spot": 100.0,
+        "strike": 100.0,
+        "volatility": 0.20,
+        "dividend_rate": 0.01
+    }
 
     return defaults
 
@@ -70,12 +69,13 @@ with nasdaq:
         with st.form("nasdaq-price"):
             cola, colb = st.columns(2)
             ticker = cola.selectbox("Underlying Ticker", ALL_TICKERS)
-            maturity = colb.date_input("Expiration Date", DEFAULTS["maturity"])
+            maturity = colb.selectbox("Expiration Date", POLYGON.expiration_dates(ticker))
+            maturity = datetime.strptime(maturity, '%B %d, %Y').date()
             submit = st.form_submit_button("Update Contract Table", use_container_width=True)
 
         ticker_contracts = POLYGON.get_ticker_contracts_given_exp(ticker, expiration=maturity)
+
         st.write(ticker_contracts)
-            
         with st.form("price-contract"):
             cola, colb, colc = st.columns(3)
             opt_id = colb.selectbox("Contract ID", ticker_contracts["Contract ID"])
@@ -89,27 +89,29 @@ with nasdaq:
             opt = USOption(option_type=contract["Type"],
                 strike=contract["Strike"], spot=contract["Mark"], 
                 maturity=maturity, 
-                implied_volatility=float(contract["Implied Volatility"][:-1]) / 100,
+                implied_volatility=float(contract["Implied Volatility"][:-1].replace(",","")) / 100,
                 risk_free_rate=DEFAULTS["risk_free_rate"],
                 dividend_rate=0.02)
             
             with st.spinner(f"Pricing {ticker} option #{opt_id} using {model_name}..."):
                 if model == "Deep Q-Network":
                     st.error("Not Supported Yet")
-                    opts = []
+                    priced_options = []
                 elif model == "all models": 
-                    opts = opt.all()
+                    priced_options = opt.all()
                 else:
-                    opts = [opt.priced(model)]
+                    priced_options = [opt.priced(model)]
             
-            for opt in opts:
-                st.success(str(opt))
+            for priced_option in priced_options:
+                st.success(str(priced_option))
 
 with american:
     st.info("Price a Custom American Option")
     with st.form("american-price"):
         opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["us"] + ["All Models"], DEFAULTS)
-    if submit:
+    if (maturity - date.today()) / timedelta(days=1) < 0:
+        st.error("Contract Expired")
+    elif submit:
         model_name = "all models" if model == "All Models" else f"a {model} model"
         opt = USOption(option_type=opttype,
                     strike=k, spot=s0, 
@@ -120,19 +122,21 @@ with american:
         with st.spinner(f"Pricing custom option spread using {model_name}..."):
             if model == "Deep Q-Network":
                 st.error("Not Supported Yet")
-                opts = []
+                priced_options = []
             elif model == "all models": 
-                opts = opt.all()
+                priced_options = opt.all()
             else:
-                opts = [opt.priced(model)]
+                priced_options = [opt.priced(model)]
 
-        for opt in opts:
-            st.success(str(opt))
+        for priced_option in priced_options:
+            st.success(str(priced_option))
 with eu:
     st.info("Price a Custom European Option")
     with st.form("euro-price"):
         opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["eu"] + ["All Models"], DEFAULTS)
-    if submit:
+    if (maturity - date.today()) / timedelta(days=1) < 0:
+        st.error("Contract Expired")
+    elif submit:
         if maturity - date.today() < timedelta(days=1):
             st.error("Maturity Date Already Passed")
         else:
@@ -145,12 +149,12 @@ with eu:
                     dividend_rate=d)
             with st.spinner(f"Pricing custom option spread using {model_name}..."):
                 if model == "all models":
-                    opts = opt.all() 
+                    priced_options = opt.all() 
                 else:
-                    opts = [opt.priced(model)]
+                    priced_options = [opt.priced(model)]
 
-        for opt in opts:
-            st.success(str(opt))
+        for priced_option in priced_options:
+            st.success(str(priced_option))
 
 with dqn:
     st.info("Deep Q-Network Breakdown | Work in progress")
