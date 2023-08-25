@@ -133,7 +133,7 @@ class Polygon:
         return market_details["exchanges"][exchange] 
 
     def expiration_dates(self, ticker):
-        return options.get_expiration_dates(ticker.lower())
+        return options.get_expiration_dates(ticker.lower())[1:]
 
     def store_all_eod_data(self):
         clear_table()
