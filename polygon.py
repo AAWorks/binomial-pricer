@@ -1,4 +1,6 @@
 import requests, time
+import random
+import numpy as np
 import pandas as pd
 import yfinance as yf
 from yahoo_fin import options
@@ -6,7 +8,6 @@ from datetime import datetime
 
 from utils.tickers import read_tickers
 from utils.db_wrapper import clear_table, add_rows, yf_current_prices
-
 
 class Polygon:
     _headers: dict
@@ -71,16 +72,23 @@ class Polygon:
         query = f"underlying_ticker={ticker}{position}{expired}&limit=1000"
         return self._options_query(query)
     
-    def _poly_eod_options_of_ticker(self, ticker):
+    def _poly_ticker_contracts(self, ticker, expiration):
         json_data = self._polygon_options(ticker).json()
         ticker_data = pd.DataFrame(json_data["results"])
         prices = self._get_eod_stock_prices(self.nasdaq_tickers)
         ticker_data["mark"] = prices[ticker]
         ticker_data["price"] = prices[ticker]
     
-    def _yf_eod_options_of_ticker(self, ticker):
-        #today = datetime.now.strftime("%m/%d/%Y")
-        chain = options.get_options_chain(ticker)
+    def _yf_ticker_contracts(self, ticker, expiration):
+        random.seed(31337)
+        np.random.seed(31337)
+
+        expiration = expiration.strftime("%m/%d/%Y")
+        try:
+            chain = options.get_options_chain(ticker)
+        except ValueError:
+            return pd.DataFrame()
+
         calls = pd.DataFrame(chain["calls"])
         puts = pd.DataFrame(chain["puts"])
         calls["Type"] = "C"
@@ -88,6 +96,11 @@ class Polygon:
 
         ticker_data = pd.concat([calls, puts]).sort_index(kind='merge')
         ticker_data.reset_index(inplace=True, drop=True)
+        
+        ticker_data["Contract ID"] = np.random.randint(low=100, high=999, size=len(ticker_data))
+        ticker_data["Mark"] = ticker_data[["Bid", "Ask"]].mean(axis=1)
+        
+        #ticker_data["Dividend Yield"] = ticker_data["x"] - ticker_data["Mark"]
 
         return ticker_data
 
@@ -134,9 +147,9 @@ class Polygon:
 
         add_rows(eod_data, current_stock_prices)
     
-    def get_eod_data_of_ticker(self, ticker):
-        scrape_methods = {True: self._yf_eod_options_of_ticker, False: self._poly_eod_options_of_ticker}
+    def get_ticker_contracts_given_exp(self, ticker, expiration: str):
+        scrape_methods = {True: self._yf_ticker_contracts, False: self._poly_ticker_contracts}
 
-        eod_data = scrape_methods[self._yf_backup](ticker)
+        eod_data = scrape_methods[self._yf_backup](ticker, expiration)
 
         return eod_data
