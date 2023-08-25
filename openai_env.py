@@ -5,7 +5,7 @@ import datetime
 class OptionEnv(gym.Env):
     def __init__(self, **kwargs): 
         today=datetime.date.today()
-        self._spot = spot
+        self._spot = kwargs["spot"]
         self._strike = strike
         self._r = r
         self._sigma = sigma
