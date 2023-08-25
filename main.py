@@ -25,6 +25,10 @@ def env_ex(_test):
 def check_nasdaq_status():
     return POLYGON.exchange_status("nasdaq")
 
+@st.cache_data(ttl=timedelta(hours=1))
+def pull_close_prices():
+    return POLYGON.last_ticker_prices
+
 @st.cache_data
 def get_custom_defaults():
     defaults = {
@@ -42,6 +46,7 @@ def get_custom_defaults():
 DEFAULTS = get_custom_defaults()
 ALL_TICKERS = get_tickers()
 NASDAQ_STATUS = check_nasdaq_status()
+EOD_PRICES = pull_close_prices()
 
 test_env = OptionEnv(spot=DEFAULTS["spot"], strike=DEFAULTS["strike"], r=DEFAULTS["risk_free_rate"], sigma=DEFAULTS["volatility"], maturity=DEFAULTS["maturity"])
 test_sim_data = env_ex(test_env)
@@ -87,7 +92,7 @@ with nasdaq:
         if submittwo:
             model_name = "all models" if model == "All Models" else f"a {model} model"
             opt = USOption(option_type=contract["Type"],
-                strike=contract["Strike"], spot=contract["Mark"], 
+                strike=contract["Strike"], spot=EOD_PRICES[ticker], 
                 maturity=maturity, 
                 implied_volatility=float(contract["Implied Volatility"][:-1].replace(",","")) / 100,
                 risk_free_rate=DEFAULTS["risk_free_rate"],
