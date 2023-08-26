@@ -15,6 +15,7 @@ from models.abstract import Model
 class TFAModel(Model):
     def __init__(self, 
                  environment,
+                 params,
                  iterations: int = 20000,
                  steps: int = 10,
                  repbuffer_len: int = 100000,
@@ -36,11 +37,12 @@ class TFAModel(Model):
         self._eval_interval = eval_interval 
         self._log_interval = log_interval
 
-        self._setup_envs(environment)
+        self._setup_envs(environment, params)
         self._agent, self._repl_buffer = None, None
+        self._log, self._returns = None, None
         
-    def _setup_envs(self, env):
-        train_gym, eval_gym = env(), env()
+    def _setup_envs(self, env, params):
+        train_gym, eval_gym = env(params), env(params)
         train_gym_wrapper = gym_wrapper.GymWrapper(train_gym)
         eval_gym_wrapper = gym_wrapper.GymWrapper(eval_gym)
 
@@ -96,7 +98,7 @@ class TFAModel(Model):
         
         self._iterator = iter(dataset)
     
-    def _train_iteration(self, log, returns):
+    def _train_iteration(self):
         for _ in range(self._collect_steps_per_iteration):
             self._collect_step(self._train_env, self._agent.collect_policy, self._repl_buffer)
         
@@ -106,12 +108,12 @@ class TFAModel(Model):
         step = self._agent.train_step_counter.numpy()
 
         if step % self._log_interval == 0:
-            log.append(f"step = {step}: loss = {train_loss}")
+            self._log.append(f"step = {step}: loss = {train_loss}")
         
         if step % self._eval_interval == 0:
             avg_return = dqn_sim(self._eval_env, self._agent.policy, eps=self._num_eval_episodes)
-            log.append(f"step = {step}: Average Return = {avg_return}")
-            returns.append(avg_return)
+            self._log.append(f"step = {step}: Average Return = {avg_return}")
+            self._returns.append(avg_return)
 
     def train(self):
         if self._repl_buffer is None:
@@ -122,22 +124,30 @@ class TFAModel(Model):
         self._agent.train_step_counter.assign(0)
 
         avg_return = dqn_sim(self._eval_env, self._agent.policy, eps=self._num_eval_episodes)
-        log, returns = [f"Step = 0: Average Return = {avg_return}"], [avg_return]
+        self._log, self._returns = [f"Step = 0: Average Return = {avg_return}"], [avg_return]
 
         for _ in range(self._num_iterations):
-            self._train_iteration(log, returns)
+            self._train_iteration()
     
-        return log, returns
-    
-    def train_iteration_dict(self, returns):
+    @property
+    def train_iteration_dict(self):
         iterations = range(0, self._num_iterations + 1, self._eval_interval)
         return {
             "Iterations": iterations,
-            "Average Return": returns
+            "Average Return": self._returns
         }
     
+    @property
+    def train_log(self):
+        return self._log
+
+    @property
+    def train_returns(self):
+        return self._returns
+    
+    @property
     def npv(self):
         return dqn_sim(self._eval_env, self._agent.policy, eps=2_000)
 
     def __str__(self):
-        return f"Option Price (Deep Q-Network Pricing): ${self.npv()}"
+        return f"Option Price (Deep Q-Network): ${self.npv}"

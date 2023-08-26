@@ -3,17 +3,15 @@ import numpy as np
 import datetime
 
 class OptionEnv(gym.Env):
-    def __init__(self, **kwargs): 
+    def __init__(self, params): 
         today=datetime.date.today()
-        self._spot = kwargs["spot"]
-        self._strike = strike
-        self._r = r
-        self._sigma = sigma
+        self._spot = params["spot"]
+        self._strike = params["strike"]
+        self._r = params["risk_free_rate"]
+        self._sigma = params["implied_volatility"]
         self._today = today
 
-        if not maturity:
-            maturity = datetime.date(today.year + 1, today.month, today.day)
-
+        maturity = params["maturity"]
         self._t = maturity - self._today
 
         self._s_new, self._reward, self._day_step = 0, 0, 0
