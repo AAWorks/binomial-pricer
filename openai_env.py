@@ -3,17 +3,15 @@ import numpy as np
 import datetime
 
 class OptionEnv(gym.Env):
-    def __init__(self, **kwargs): 
+    def __init__(self, params): 
         today=datetime.date.today()
-        self._spot = kwargs["spot"]
-        self._strike = strike
-        self._r = r
-        self._sigma = sigma
+        self._spot = params["spot"]
+        self._strike = params["strike"]
+        self._r = params["risk_free_rate"]
+        self._sigma = params["implied_volatility"]
         self._today = today
 
-        if not maturity:
-            maturity = datetime.date(today.year + 1, today.month, today.day)
-
+        maturity = params["maturity"]
         self._t = maturity - self._today
 
         self._s_new, self._reward, self._day_step = 0, 0, 0
@@ -46,7 +44,7 @@ class OptionEnv(gym.Env):
     def float_time(self):
         return self.n_days / 365
     
-    def single_step(self, action: int):
+    def step(self, action: int):
         if action == 1: # exercise opt
             reward = max(self._strike - self._s_new, 0.0) * np.exp(-self._r * self.float_time * (self._day_step / self.n_days))
             done = True
@@ -77,7 +75,7 @@ class OptionEnv(gym.Env):
         sim_prices.append(tmp[0])
         for _ in range(365):
             action = 0
-            s_next, _, _, _ = self.single_step(action)
+            s_next, _, _, _ = self.step(action)
             sim_prices.append(s_next[0])
         
         return sim_prices

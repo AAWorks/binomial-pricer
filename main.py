@@ -37,7 +37,7 @@ def get_custom_defaults():
         "risk_free_rate": POLYGON.risk_free_rate,
         "spot": 100.0,
         "strike": 100.0,
-        "volatility": 0.20,
+        "implied_volatility": 0.20,
         "dividend_rate": 0.01
     }
 
@@ -48,7 +48,9 @@ ALL_TICKERS = get_tickers()
 NASDAQ_STATUS = check_nasdaq_status()
 EOD_PRICES = pull_close_prices()
 
-test_env = OptionEnv(spot=DEFAULTS["spot"], strike=DEFAULTS["strike"], r=DEFAULTS["risk_free_rate"], sigma=DEFAULTS["volatility"], maturity=DEFAULTS["maturity"])
+test_defs = {k: v for k, v in DEFAULTS.items() if k != "maturity"}
+test_defs["maturity"] = test_defs["custom_maturity"]
+test_env = OptionEnv(test_defs)
 test_sim_data = env_ex(test_env)
 
 st.title('Quantitative Options Pricing') 
@@ -58,17 +60,11 @@ nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pri
 
 with nasdaq:
     st.info("Pricing Options from the NASDAQ-100 | Work In Progress")
-    title_status = NASDAQ_STATUS.title()
-    message_type = {"open": st.success, "extended-hours": st.error, "closed": st.error} 
-    message = {
-        "open": f"Market Status: {title_status}", 
-        "extended-hours": f"Feature Not Available During NASDAQ After-Hours", 
-        "closed": f"Feature Not Supported While NASDAQ is Closed"
-    }
+    message_type = {"open": st.success, "extended-hours": st.warning, "closed": st.error} 
     
-    message_type[NASDAQ_STATUS](message[NASDAQ_STATUS])
+    message_type[NASDAQ_STATUS](f"Market Status: {NASDAQ_STATUS.replace('-',' ').title()}")
     with st.expander("Note on Data Source"):
-        st.caption("This project was originally designed to use real-time data from Polygon.io. All the tooling is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use EOD data from Yahoo Finance.")
+        st.caption("This project was originally designed to use real-time data from Polygon.io. All the infrastructure is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use EOD data from Yahoo Finance [this also means you can use this pricer at all hours :) ].")
 
     if True: # NASDAQ_STATUS == "open":
         with st.form("nasdaq-price"):
@@ -99,10 +95,7 @@ with nasdaq:
                 dividend_rate=0.02)
             
             with st.spinner(f"Pricing {ticker} option #{opt_id} using {model_name}..."):
-                if model == "Deep Q-Network":
-                    st.error("Not Supported Yet")
-                    priced_options = []
-                elif model == "all models": 
+                if model == "all models": 
                     priced_options = opt.all()
                 else:
                     priced_options = [opt.priced(model)]
@@ -126,10 +119,7 @@ with american:
                     risk_free_rate=risk_free_r,
                     dividend_rate=d)
         with st.spinner(f"Pricing custom option spread using {model_name}..."):
-            if model == "Deep Q-Network":
-                st.error("Not Supported Yet")
-                priced_options = []
-            elif model == "all models": 
+            if model == "all models": 
                 priced_options = opt.all()
             else:
                 priced_options = [opt.priced(model)]

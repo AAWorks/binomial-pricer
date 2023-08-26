@@ -98,6 +98,7 @@ class Polygon:
         ticker_data.reset_index(inplace=True, drop=True)
         
         ticker_data["Contract ID"] = np.random.randint(low=100, high=999, size=len(ticker_data))
+        ticker_data["Bid"] = ticker_data["Bid"].apply(pd.to_numeric, errors='coerce')
         ticker_data["Mark"] = ticker_data[["Bid", "Ask"]].mean(axis=1)
         
         #ticker_data["Dividend Yield"] = ticker_data["x"] - ticker_data["Mark"]

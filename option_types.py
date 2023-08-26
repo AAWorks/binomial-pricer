@@ -14,6 +14,7 @@ MODELS = {
 
 class USOption(BaseOption):
     _model_map = {
+        "Deep Q-Network": None,
         "Binomial Tree": USBinomialTree,
         "Monte Carlo": MonteCarlo
     }
@@ -23,7 +24,11 @@ class USOption(BaseOption):
         super().__init__(kwargs)
     
     def _dqn(self):
-        return None
+        option = TFAModel(OptionEnv, self._kwargs)
+        option.init_agent()
+        option.build_replay_buffer()
+        priced_option = option.train()
+        return priced_option
     
     def priced(self, model: str):
         if model == "Deep Q-Network":

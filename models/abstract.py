@@ -87,7 +87,7 @@ def inputs(region_models, defaults):
     opttype = col1.selectbox("Option Type", ["C", "P"])
     s0 = float(col2.number_input("Spot Price", defaults["spot"]))
     k = float(col3.number_input("Strike Price", defaults["strike"]))
-    iv = float(col4.number_input("Volatility", defaults["volatility"]))
+    iv = float(col4.number_input("Volatility", defaults["implied_volatility"]))
     d = float(col6.number_input("Dividend Rate", defaults["dividend_rate"]))
     r = float(col5.number_input("Risk Free Rate", defaults["risk_free_rate"]))
     cola, colb = st.columns(2)
