@@ -62,7 +62,7 @@ with nasdaq:
     st.info("Pricing Options from the NASDAQ-100 | Work In Progress")
     message_type = {"open": st.success, "extended-hours": st.warning, "closed": st.error} 
     
-    # message_type[NASDAQ_STATUS](f"Market Status: {NASDAQ_STATUS.replace('-',' ').title()}")
+    message_type[NASDAQ_STATUS](f"Market Status: {NASDAQ_STATUS.replace('-',' ').title()}")
     with st.expander("Note on Data Source"):
         st.caption("This project was originally designed to use real-time data from Polygon.io. All the infrastructure is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use EOD data from Yahoo Finance [this also means you can use this pricer at all hours :) ].")
 

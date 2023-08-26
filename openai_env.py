@@ -44,7 +44,7 @@ class OptionEnv(gym.Env):
     def float_time(self):
         return self.n_days / 365
     
-    def single_step(self, action: int):
+    def step(self, action: int):
         if action == 1: # exercise opt
             reward = max(self._strike - self._s_new, 0.0) * np.exp(-self._r * self.float_time * (self._day_step / self.n_days))
             done = True
@@ -75,7 +75,7 @@ class OptionEnv(gym.Env):
         sim_prices.append(tmp[0])
         for _ in range(365):
             action = 0
-            s_next, _, _, _ = self.single_step(action)
+            s_next, _, _, _ = self.step(action)
             sim_prices.append(s_next[0])
         
         return sim_prices

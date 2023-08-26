@@ -86,7 +86,7 @@ class TFAModel(Model):
             raise Exception("Agent has not been initialized")
 
         self._repl_buffer = tf_uniform_replay_buffer.TFUniformReplayBuffer(
-            data_spec=self._agent.collect_data_context,
+            data_spec=self._agent.collect_data_spec,
             batch_size=self._train_env.batch_size,
             max_length=self._replay_buffer_max_length
         )
@@ -111,7 +111,7 @@ class TFAModel(Model):
             self._log.append(f"step = {step}: loss = {train_loss}")
         
         if step % self._eval_interval == 0:
-            avg_return = dqn_sim(self._eval_env, self._agent.policy, eps=self._num_eval_episodes)
+            avg_return = dqn_sim(self._agent.policy, self._eval_env, eps=self._num_eval_episodes)
             self._log.append(f"step = {step}: Average Return = {avg_return}")
             self._returns.append(avg_return)
 
@@ -123,7 +123,7 @@ class TFAModel(Model):
 
         self._agent.train_step_counter.assign(0)
 
-        avg_return = dqn_sim(self._eval_env, self._agent.policy, eps=self._num_eval_episodes)
+        avg_return = dqn_sim(self._agent.policy, self._eval_env, eps=self._num_eval_episodes)
         self._log, self._returns = [f"Step = 0: Average Return = {avg_return}"], [avg_return]
 
         for _ in range(self._num_iterations):
@@ -147,7 +147,7 @@ class TFAModel(Model):
     
     @property
     def npv(self):
-        return dqn_sim(self._eval_env, self._agent.policy, eps=2_000)
+        return dqn_sim(self._agent.policy, self._eval_env, eps=2_000)
 
     def __str__(self):
         return f"Option Price (Deep Q-Network): ${self.npv}"
