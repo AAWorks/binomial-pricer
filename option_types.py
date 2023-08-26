@@ -1,6 +1,6 @@
 from models.abstract import BaseOption
 
-from openai_env import OptionEnv
+from models.openai_env import OptionEnv
 from models.baseline_tfa_dqn import TFAModel
 
 from models.binomial_tree import EUBinomialTree, USBinomialTree

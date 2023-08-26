@@ -4,7 +4,7 @@ st.set_page_config(layout="wide", page_title="Options Pricing", page_icon=":gear
 from datetime import datetime, date, timedelta
 
 from models.abstract import inputs
-from openai_env import OptionEnv
+from models.openai_env import OptionEnv
 from option_types import MODELS, USOption, EUOption
 
 from polygon import Polygon
@@ -78,11 +78,10 @@ with nasdaq:
 
         st.write(ticker_contracts)
         with st.form("price-contract"):
-            cola, colb, colc = st.columns(3)
+            cola, colb = st.columns(2)
             opt_id = colb.selectbox("Contract ID", ticker_contracts["Contract ID"])
             model = cola.selectbox("Model", MODELS["us"] + ["All Models"])
             contract = ticker_contracts.loc[ticker_contracts['Contract ID'] == opt_id].to_dict('records')[0]
-            colc.metric("Strike", value=f"${contract['Strike']}")
             submittwo = st.form_submit_button("Calculate Fair Value", use_container_width=True)
             
         if submittwo:
@@ -93,7 +92,7 @@ with nasdaq:
                 implied_volatility=float(contract["Implied Volatility"][:-1].replace(",","")) / 100,
                 risk_free_rate=DEFAULTS["risk_free_rate"],
                 dividend_rate=0.02)
-            
+            if model == "Deep Q-Network": st.warning("Options Pricing with the DQN may take a few minutes")
             with st.spinner(f"Pricing {ticker} option #{opt_id} using {model_name}..."):
                 if model == "all models": 
                     priced_options = opt.all()
@@ -118,6 +117,7 @@ with american:
                     implied_volatility=volatility,
                     risk_free_rate=risk_free_r,
                     dividend_rate=d)
+        if model == "Deep Q-Network": st.warning("Options Pricing with the DQN may take a few minutes")
         with st.spinner(f"Pricing custom option spread using {model_name}..."):
             if model == "all models": 
                 priced_options = opt.all()
