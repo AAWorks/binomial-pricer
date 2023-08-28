@@ -5,6 +5,7 @@ from datetime import datetime, date, timedelta
 
 from models.abstract import inputs
 from models.openai_env import OptionEnv
+from models.baseline_tfa_dqn import TFAModel
 from option_types import MODELS, USOption, EUOption
 
 from polygon import Polygon
@@ -154,7 +155,41 @@ with eu:
 
 with dqn:
     st.info("Deep Q-Network Breakdown | Work in progress")
+    st.subheader("Test Option Specs")
+    del test_defs["custom_maturity"]
+    ncols = len(test_defs)
+    def_keys = list(test_defs.keys())
+    columns = st.columns(ncols)
+    for n in range(ncols):
+        key = def_keys[n]
+        value = test_defs[key] if key != "maturity" else test_defs[key].strftime("%m/%d/%Y")
+        columns[n].metric(key, value)
+
+    st.divider()
+
+    st.subheader("Simulated Option Data (Assuming No Early Excercise)")
     st.line_chart(test_sim_data)
+
+    st.divider()
+    st.subheader("Model")
+    option = TFAModel(OptionEnv, test_defs)
+    with st.status("Building Model...", expanded=True) as status:
+        st.write("Initializing Agent...")
+        option.init_agent()
+        st.write("Building Replay Buffer...")
+        option.build_replay_buffer()
+        st.write("Training Model...")
+        option.train()
+        st.write("Pricing Option...")
+        option.calculate_npv()
+        status.update(label="Option Pricing Complete", state="complete", expanded=False)
+    
+    st.divider()
+    st.subheader("Train Iteration Log")
+    st.write(option.train_log)
+    st.divider()
+    st.subheader("Graphed Average Returns")
+    st.line_chart(option.train_iteration_dict)
 
 # with pull:
 #     with st.form("tmp_pull"):

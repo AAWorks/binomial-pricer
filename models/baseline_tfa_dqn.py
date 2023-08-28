@@ -1,4 +1,6 @@
 import tensorflow as tf
+import streamlit as st
+import time
 from models.monte_carlo import dqn_sim
 
 from tf_agents.environments import  gym_wrapper           # wrap OpenAI gym
@@ -16,8 +18,8 @@ class TFAModel(Model):
     def __init__(self, 
                  environment,
                  params,
-                 iterations: int = 20000,
-                 steps: int = 10,
+                 iterations: int = 200,
+                 steps_per_iter: int = 10,
                  repbuffer_len: int = 100000,
                  batch_size: int = 256,
                  learning_r: int = 1e-3,
@@ -27,7 +29,7 @@ class TFAModel(Model):
                  ): # hyperparameters
 
         self._num_iterations = iterations
-        self._collect_steps_per_iteration = steps
+        self._collect_steps_per_iteration = steps_per_iter
         self._replay_buffer_max_length = repbuffer_len
         self._batch_size = batch_size
 
@@ -40,6 +42,7 @@ class TFAModel(Model):
         self._setup_envs(environment, params)
         self._agent, self._repl_buffer = None, None
         self._log, self._returns = None, None
+        self._npv = None
         
     def _setup_envs(self, env, params):
         train_gym, eval_gym = env(params), env(params)
@@ -99,15 +102,21 @@ class TFAModel(Model):
         self._iterator = iter(dataset)
     
     def _train_iteration(self):
-        for _ in range(self._collect_steps_per_iteration):
+        for n in range(self._collect_steps_per_iteration):
+            with open("data/dqn_log.txt", "a") as f:
+                f.write(f"collecting [step = {n}] ...\n")
             self._collect_step(self._train_env, self._agent.collect_policy, self._repl_buffer)
         
         exp, _ = next(self._iterator)
         train_loss = self._agent.train(exp).loss
 
         step = self._agent.train_step_counter.numpy()
+        # with open("data/dqn_log.txt", "a") as f:
+        #         f.write(f"step : {step}\n")
 
         if step % self._log_interval == 0:
+            with open("data/dqn_log.txt", "a") as f:
+                f.write(f"step = {step}: loss = {train_loss}\n")
             self._log.append(f"step = {step}: loss = {train_loss}")
         
         if step % self._eval_interval == 0:
@@ -124,9 +133,12 @@ class TFAModel(Model):
         self._agent.train_step_counter.assign(0)
 
         avg_return = dqn_sim(self._agent.policy, self._eval_env, eps=self._num_eval_episodes)
+
         self._log, self._returns = [f"Step = 0: Average Return = {avg_return}"], [avg_return]
 
-        for _ in range(self._num_iterations):
+        for i in range(self._num_iterations):
+            with open("data/dqn_log.txt", "a") as f:
+                f.write(f"iteration = [{i}]\n")
             self._train_iteration()
     
     @property
@@ -144,10 +156,13 @@ class TFAModel(Model):
     @property
     def train_returns(self):
         return self._returns
+
+    def calculate_npv(self):
+        self._npv = dqn_sim(self._agent.policy, self._eval_env, eps=2_000)
     
-    @property
+    @property 
     def npv(self):
-        return dqn_sim(self._agent.policy, self._eval_env, eps=2_000)
+        return self._npv
 
     def __str__(self):
         return f"Option Price (Deep Q-Network): ${self.npv}"

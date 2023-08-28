@@ -27,7 +27,9 @@ class USOption(BaseOption):
         option = TFAModel(OptionEnv, self._kwargs)
         option.init_agent()
         option.build_replay_buffer()
-        priced_option = option.train()
+        option.train()
+        option.calculate_npv()
+        priced_option = option
         return priced_option
     
     def priced(self, model: str):
