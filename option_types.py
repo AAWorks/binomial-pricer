@@ -14,7 +14,7 @@ MODELS = {
 
 class USOption(BaseOption):
     _model_map = {
-        "Deep Q-Network": None,
+        #"Deep Q-Network": None,
         "Binomial Tree": USBinomialTree,
         "Monte Carlo": MonteCarlo
     }

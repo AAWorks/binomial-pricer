@@ -1,6 +1,6 @@
 import tensorflow as tf
 import streamlit as st
-import time
+import pandas as pd
 from models.monte_carlo import dqn_sim
 
 from tf_agents.environments import  gym_wrapper           # wrap OpenAI gym
@@ -24,9 +24,12 @@ class TFAModel(Model):
                  batch_size: int = 256,
                  learning_r: int = 1e-3,
                  n_eps: int = 10,
-                 eval_interval: int = 1000,
-                 log_interval: int = 200
+                 eval_interval: int = 25,
+                 log_interval: int = 10,
+                 debugging = False
                  ): # hyperparameters
+        
+        self._debugging = debugging
 
         self._num_iterations = iterations
         self._collect_steps_per_iteration = steps_per_iter
@@ -103,8 +106,9 @@ class TFAModel(Model):
     
     def _train_iteration(self):
         for n in range(self._collect_steps_per_iteration):
-            with open("data/dqn_log.txt", "a") as f:
-                f.write(f"collecting [step = {n}] ...\n")
+            if self._debugging:
+                with open("data/dqn_log.txt", "a") as f:
+                    f.write(f"collecting [step = {n}] ...\n")
             self._collect_step(self._train_env, self._agent.collect_policy, self._repl_buffer)
         
         exp, _ = next(self._iterator)
@@ -115,13 +119,14 @@ class TFAModel(Model):
         #         f.write(f"step : {step}\n")
 
         if step % self._log_interval == 0:
-            with open("data/dqn_log.txt", "a") as f:
-                f.write(f"step = {step}: loss = {train_loss}\n")
-            self._log.append(f"step = {step}: loss = {train_loss}")
+            if self._debugging:
+                with open("data/dqn_log.txt", "a") as f:
+                    f.write(f"step = {step}: loss = {train_loss}\n")
+            self._log.append((f"step = {step}", f"loss = {train_loss}"))
         
         if step % self._eval_interval == 0:
             avg_return = dqn_sim(self._agent.policy, self._eval_env, eps=self._num_eval_episodes)
-            self._log.append(f"step = {step}: Average Return = {avg_return}")
+            self._log.append((f"step = {step}", f"Average Return = {avg_return}"))
             self._returns.append(avg_return)
 
     def train(self):
@@ -134,12 +139,22 @@ class TFAModel(Model):
 
         avg_return = dqn_sim(self._agent.policy, self._eval_env, eps=self._num_eval_episodes)
 
-        self._log, self._returns = [f"Step = 0: Average Return = {avg_return}"], [avg_return]
+        self._log, self._returns = [("Step = 0", f"Average Return = {avg_return}")], [avg_return]
 
+        if not self._debugging:
+            bar = st.progress(0.0, text=f"Training Model... (0/{self._num_iterations} Iterations Complete)")
         for i in range(self._num_iterations):
-            with open("data/dqn_log.txt", "a") as f:
-                f.write(f"iteration = [{i}]\n")
+            if self._debugging:
+                with open("data/dqn_log.txt", "a") as f:
+                    f.write(f"iteration = [{i}]\n")
+            else:
+                if (i + 1) % self._eval_interval == 0:
+                    bar.progress(float((i + 1) / self._num_iterations), text=f"Evaluating Return... ({i + 1}/{self._num_iterations} Iterations Complete)")
+                else:
+                    bar.progress(float((i + 1) / self._num_iterations), text=f"Training Model... ({i + 1}/{self._num_iterations} Iterations Complete)")
             self._train_iteration()
+        if not self._debugging:
+            bar.progress(1.0, text="Model Trained")
     
     @property
     def train_iteration_dict(self):
@@ -149,16 +164,24 @@ class TFAModel(Model):
             "Average Return": self._returns
         }
     
+    def _highlight_avg_return(self, ser):
+        highlight = 'background-color: ccefff'
+        default = ''
+        return [highlight if 'Average Return' in str(e) else default for e in ser] 
+    
     @property
     def train_log(self):
-        return self._log
+        cols = ["Step", "Metric"]
+        log = pd.DataFrame(self._log, columns=cols)
+        log.style.apply(self._highlight_avg_return, axis=0, subset=cols)
+        return log
 
     @property
     def train_returns(self):
         return self._returns
 
     def calculate_npv(self):
-        self._npv = dqn_sim(self._agent.policy, self._eval_env, eps=2_000)
+        self._npv = dqn_sim(self._agent.policy, self._eval_env, eps=20, st_display=True)
     
     @property 
     def npv(self):

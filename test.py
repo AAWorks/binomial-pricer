@@ -22,7 +22,7 @@ test_defs = {k: v for k, v in DEFAULTS.items() if k != "maturity"}
 test_defs["maturity"] = test_defs["custom_maturity"]
 del test_defs["custom_maturity"]
 
-option = TFAModel(OptionEnv, test_defs)
+option = TFAModel(OptionEnv, test_defs, debugging=True)
 with open("data/dqn_log.txt", "a") as f:
     f.write("Initializing Agent...\n")
 

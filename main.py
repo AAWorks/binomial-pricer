@@ -57,7 +57,7 @@ test_sim_data = env_ex(test_env)
 st.title('Quantitative Options Pricing') 
 st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep Q-Network Model | By Alejandro Alonso and Roman Chenoweth')
 
-nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "About the Deep Q-Network Model"])
+nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "411: In-Depth Deep Q-Network Demo"])
 
 with nasdaq:
     st.info("Pricing Options from the NASDAQ-100 | Work In Progress")
@@ -97,6 +97,9 @@ with nasdaq:
             with st.spinner(f"Pricing {ticker} option #{opt_id} using {model_name}..."):
                 if model == "all models": 
                     priced_options = opt.all()
+                elif model == "Deep Q-Network":
+                    st.error("DQN Not Yet Supported")
+                    priced_options = []
                 else:
                     priced_options = [opt.priced(model)]
             
@@ -154,7 +157,7 @@ with eu:
             st.success(str(priced_option))
 
 with dqn:
-    st.info("Deep Q-Network Breakdown | Work in progress")
+    st.info("Deep Q-Network Breakdown | Finishing Touches")
     st.subheader("Test Option Specs")
     del test_defs["custom_maturity"]
     ncols = len(test_defs)
@@ -163,33 +166,38 @@ with dqn:
     for n in range(ncols):
         key = def_keys[n]
         value = test_defs[key] if key != "maturity" else test_defs[key].strftime("%m/%d/%Y")
-        columns[n].metric(key, value)
+        columns[n].metric(key.replace("_"," ").title(), str(value)[:10])
 
     st.divider()
 
     st.subheader("Simulated Option Data (Assuming No Early Excercise)")
-    st.line_chart(test_sim_data)
+    sim_data = {"Option Price": test_sim_data, "Time-Steps": list(range(366))}
+    st.line_chart(sim_data, x="Time-Steps", y="Option Price")
 
     st.divider()
-    st.subheader("Model")
-    option = TFAModel(OptionEnv, test_defs)
-    with st.status("Building Model...", expanded=True) as status:
-        st.write("Initializing Agent...")
-        option.init_agent()
-        st.write("Building Replay Buffer...")
-        option.build_replay_buffer()
-        st.write("Training Model...")
-        option.train()
-        st.write("Pricing Option...")
-        option.calculate_npv()
-        status.update(label="Option Pricing Complete", state="complete", expanded=False)
-    
-    st.divider()
-    st.subheader("Train Iteration Log")
-    st.write(option.train_log)
-    st.divider()
-    st.subheader("Graphed Average Returns")
-    st.line_chart(option.train_iteration_dict)
+    go = st.button("Price Custom Option", use_container_width=True)
+    if go:
+        st.subheader("Model")
+        option = TFAModel(OptionEnv, test_defs)
+        with st.status("Building Model...", expanded=True) as status:
+            st.write("Initializing Agent...")
+            option.init_agent()
+            st.write("Done | Building Replay Buffer...")
+            option.build_replay_buffer()
+            st.write("Done | Preparing to Train...")
+            option.train()
+            status.update(label="Model Built - Pricing Option", state="running", expanded=True)
+            option.calculate_npv()
+            status.update(label="Option Pricing Complete", state="complete", expanded=False)
+        
+        st.divider()
+        st.success(str(option))
+        st.divider()
+        st.subheader("Train Iteration Log")
+        st.dataframe(option.train_log, use_container_width=True)
+        st.divider()
+        st.subheader("Graphed Average Returns")
+        st.line_chart(option.train_iteration_dict, x="Iterations", y="Average Return" )
 
 # with pull:
 #     with st.form("tmp_pull"):

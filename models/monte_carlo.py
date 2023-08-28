@@ -1,4 +1,5 @@
 import torch
+import streamlit as st
 
 from models.abstract import Model
 
@@ -42,10 +43,22 @@ def _simulate_ep(policy, env, time_step, base_return=0.0):
     
     return base_return
 
-def _simulate_eps(policy, env, eps):
+def _simulate_eps(policy, env, eps, st_display=False):
     step = env.reset()
-    return sum([_simulate_ep(policy, env, step) for _ in range(eps)])
+    total = 0
 
-def dqn_sim(policy, env, eps=10, base_return=0.0):
-    avg_return = (base_return + _simulate_eps(policy, env, eps)) / eps
+    if st_display:
+        bar = st.progress(0.0, text=f"Simulating Episodes... (0/{eps})")
+    for ep in range(eps):
+        total += _simulate_ep(policy, env, step)
+        if st_display:
+            bar.progress(float(ep / eps), text=f"Simulating Episodes... ({ep}/{eps})")
+    
+    if st_display:
+        bar.progress(1.0, text="Simulation Complete")
+
+    return total
+
+def dqn_sim(policy, env, eps=10, base_return=0.0, st_display=False):
+    avg_return = (base_return + _simulate_eps(policy, env, eps, st_display=st_display)) / eps
     return avg_return.numpy()[0] #tf dqn agent method
