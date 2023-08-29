@@ -97,9 +97,6 @@ with nasdaq:
             with st.spinner(f"Pricing {ticker} option #{opt_id} using {model_name}..."):
                 if model == "all models": 
                     priced_options = opt.all()
-                elif model == "Deep Q-Network":
-                    st.error("DQN Not Yet Supported")
-                    priced_options = []
                 else:
                     priced_options = [opt.priced(model)]
             
@@ -175,10 +172,20 @@ with dqn:
     st.line_chart(sim_data, x="Time-Steps", y="Option Price")
 
     st.divider()
-    go = st.button("Price Demo Option", use_container_width=True)
-    if go:
+    st.subheader("Deep Q-Network Specs")
+    with st.form("Define Specs"):
+        cola, colb, colc, cold = st.columns(4)
+        n_iterations = cola.number_input("Number of Iterations", min_value=1, max_value=20000, value=200, step=1)
+        eval_interval = colb.number_input("Evaluate Return Every _ Steps", min_value=1, max_value=10000, value=50, step=1)
+        log_interval = colc.number_input("Log Every _ Steps", min_value=1, max_value=20000, value=10, step=1)
+        n_sims = cold.number_input("Number of Simulation Episodes", min_value=1, max_value=2000, value=20, step=1)
+        go = st.form_submit_button("Price Demo Option", use_container_width=True)
+
+    if eval_interval > n_iterations or log_interval > n_iterations:
+        st.error("Evaluation and Log Intervals must be less than the total number of iterations")
+    elif go:
         st.subheader("Model")
-        option = TFAModel(OptionEnv, test_defs)
+        option = TFAModel(OptionEnv, test_defs, iterations=n_iterations, eval_interval=eval_interval, log_interval=log_interval, n_sims=n_sims)
         with st.status("Building Model...", expanded=True) as status:
             st.write("Initializing Agent...")
             option.init_agent()

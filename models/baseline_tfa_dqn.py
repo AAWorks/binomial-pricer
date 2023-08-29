@@ -18,15 +18,16 @@ class TFAModel(Model):
     def __init__(self, 
                  environment,
                  params,
-                 iterations: int = 50,
+                 iterations: int = 20,
                  steps_per_iter: int = 10,
                  repbuffer_len: int = 100000,
                  batch_size: int = 256,
                  learning_r: int = 1e-3,
                  n_eps: int = 10,
-                 eval_interval: int = 10,
-                 log_interval: int = 5,
-                 debugging = False
+                 eval_interval: int = 5,
+                 log_interval: int = 1,
+                 debugging = False,
+                 n_sims: int = 10
                  ): # hyperparameters
         
         self._debugging = debugging
@@ -46,6 +47,7 @@ class TFAModel(Model):
         self._agent, self._repl_buffer = None, None
         self._log, self._returns = None, None
         self._npv = None
+        self._n_sims = n_sims
         
     def _setup_envs(self, env, params):
         train_gym, eval_gym = env(params), env(params)
@@ -181,7 +183,7 @@ class TFAModel(Model):
         return self._returns
 
     def calculate_npv(self):
-        self._npv = dqn_sim(self._agent.policy, self._eval_env, eps=20, st_display=True)
+        self._npv = dqn_sim(self._agent.policy, self._eval_env, eps=self._n_sims, st_display=True)
     
     @property 
     def npv(self):
