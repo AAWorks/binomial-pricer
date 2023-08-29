@@ -76,8 +76,24 @@ with nasdaq:
             submit = st.form_submit_button("Update Contract Table", use_container_width=True)
 
         ticker_contracts = POLYGON.get_ticker_contracts_given_exp(ticker, expiration=maturity)
-
-        st.write(ticker_contracts)
+        
+        ticker_contracts["spot"] = EOD_PRICES[ticker]
+        st.dataframe(ticker_contracts, hide_index=True, use_container_width=True,
+                     column_order=("Contract ID", "Contract Name", "Type", "spot", 
+                                   "Strike", "Mark", "Implied Volatility", "Last Trade Date",
+                                   "Last Price", "Bid", "Ask", "Open Interest"),
+                     column_config={
+            "Contract Name": "Full Ticker",
+            "Type": "Call/Put",
+            "spot": st.column_config.NumberColumn("Spot Price", format="$%.2f"),
+            "Strike": st.column_config.NumberColumn("Strike", format="$%.2f"),
+            "Mark": st.column_config.NumberColumn("Mark (Mid)", format="$%.2f"),
+            "Last Trade Date": "Last Trade Date",
+            "Last Price": st.column_config.NumberColumn("Last Trade Price", format="$%.2f"),
+            "Bid": st.column_config.NumberColumn("Bid", format="$%.2f"),
+            "Ask": st.column_config.NumberColumn("Ask", format="$%.2f"),
+            "Open Interest": "OI"
+        })
         with st.form("price-contract"):
             cola, colb = st.columns(2)
             opt_id = colb.selectbox("Contract ID", ticker_contracts["Contract ID"])

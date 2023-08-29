@@ -82,7 +82,9 @@ class BaseBinomialTree(Model):
     def st_visualize(self):
         st.success(str(self))
         if self._origin == "us": 
-            st.caption(f"Potential PnL Gained from Early Exercise: {self.early_exercise_pnl} | Held Value: {self.baseline}")
+            cola, colb = st.columns(2)
+            cola.caption(f"Potential PnL Gained from Early Exercise: ${self.early_exercise_pnl}")
+            colb.caption(f"Held Value: ${self.baseline}")
         st.divider()
         eu = self.prices_over_time()
         st.subheader("Baseline Value Over Time")
