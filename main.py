@@ -102,7 +102,7 @@ with nasdaq:
             
             st.info(f"Contract Mark: {contract['Mark']}")
             for priced_option in priced_options:
-                st.success(str(priced_option))
+                priced_option.st_visualize()
 
 with american:
     st.info("Price a Custom American Option")
@@ -126,7 +126,7 @@ with american:
                 priced_options = [opt.priced(model)]
 
         for priced_option in priced_options:
-            st.success(str(priced_option))
+            priced_option.st_visualize()
 with eu:
     st.info("Price a Custom European Option")
     with st.form("euro-price"):
@@ -151,7 +151,7 @@ with eu:
                     priced_options = [opt.priced(model)]
 
         for priced_option in priced_options:
-            st.success(str(priced_option))
+            priced_option.st_visualize()
 
 with dqn:
     st.info("Deep Q-Network Breakdown | Finishing Touches")
@@ -185,26 +185,20 @@ with dqn:
         st.error("Evaluation and Log Intervals must be less than the total number of iterations")
     elif go:
         st.subheader("Model")
-        option = TFAModel(OptionEnv, test_defs, iterations=n_iterations, eval_interval=eval_interval, log_interval=log_interval, n_sims=n_sims)
+        tfa = TFAModel(OptionEnv, test_defs, iterations=n_iterations, eval_interval=eval_interval, log_interval=log_interval, n_sims=n_sims)
         with st.status("Building Model...", expanded=True) as status:
             st.write("Initializing Agent...")
-            option.init_agent()
+            tfa.init_agent()
             st.write("Done | Building Replay Buffer...")
-            option.build_replay_buffer()
+            tfa.build_replay_buffer()
             st.write("Done | Preparing to Train...")
-            option.train()
+            tfa.train()
             status.update(label="Model Built - Pricing Option", state="running", expanded=True)
-            option.calculate_npv()
+            tfa.calculate_npv()
             status.update(label="Option Pricing Complete", state="complete", expanded=False)
         
         st.divider()
-        st.success(str(option))
-        st.divider()
-        st.subheader("Train Iteration Log")
-        st.dataframe(option.train_log, use_container_width=True)
-        st.divider()
-        st.subheader("Graphed Average Returns")
-        st.line_chart(option.train_iteration_dict, x="Iterations", y="Average Return" )
+        tfa.st_visualize()
 
 # with pull:
 #     with st.form("tmp_pull"):
