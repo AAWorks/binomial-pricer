@@ -175,7 +175,7 @@ with dqn:
     st.line_chart(sim_data, x="Time-Steps", y="Option Price")
 
     st.divider()
-    go = st.button("Price Custom Option", use_container_width=True)
+    go = st.button("Price Demo Option", use_container_width=True)
     if go:
         st.subheader("Model")
         option = TFAModel(OptionEnv, test_defs)

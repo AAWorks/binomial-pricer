@@ -18,14 +18,14 @@ class TFAModel(Model):
     def __init__(self, 
                  environment,
                  params,
-                 iterations: int = 200,
+                 iterations: int = 50,
                  steps_per_iter: int = 10,
                  repbuffer_len: int = 100000,
                  batch_size: int = 256,
                  learning_r: int = 1e-3,
                  n_eps: int = 10,
-                 eval_interval: int = 25,
-                 log_interval: int = 10,
+                 eval_interval: int = 10,
+                 log_interval: int = 5,
                  debugging = False
                  ): # hyperparameters
         
@@ -158,7 +158,7 @@ class TFAModel(Model):
     
     @property
     def train_iteration_dict(self):
-        iterations = range(0, self._num_iterations + 1, self._eval_interval)
+        iterations = [str(x) for x in range(0, self._num_iterations + 1, self._eval_interval)]
         return {
             "Iterations": iterations,
             "Average Return": self._returns
