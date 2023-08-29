@@ -78,6 +78,10 @@ class Model(BaseOption):
     @abstractmethod
     def npv(self):
         return -1
+    
+    @abstractmethod
+    def st_visualize(self):
+        raise NotImplementedError()
 
     def __str__(self):
         return f"Option Price ({self._name} Model): ${self.npv}"

@@ -48,6 +48,7 @@ class TFAModel(Model):
         self._log, self._returns = None, None
         self._npv = None
         self._n_sims = n_sims
+        self._priced = False
         
     def _setup_envs(self, env, params):
         train_gym, eval_gym = env(params), env(params)
@@ -184,6 +185,7 @@ class TFAModel(Model):
 
     def calculate_npv(self):
         self._npv = dqn_sim(self._agent.policy, self._eval_env, eps=self._n_sims, st_display=True)
+        self._priced = True
     
     @property 
     def npv(self):
@@ -191,3 +193,16 @@ class TFAModel(Model):
 
     def __str__(self):
         return f"Option Price (Deep Q-Network): ${self.npv}"
+    
+    def st_visualize(self):
+        if not self._priced:
+            st.error("Option Not Yet Priced")
+            return
+        st.success(str(self))
+        st.divider()
+        st.subheader("Train Iteration Log")
+        st.dataframe(self.train_log, use_container_width=True)
+        st.divider()
+        st.subheader("Graphed Average Returns")
+        st.line_chart(self.train_iteration_dict, x="Iterations", y="Average Return" )
+        st.divider()

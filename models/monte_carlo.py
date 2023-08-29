@@ -1,38 +1,101 @@
 import torch
 import streamlit as st
+import matplotlib as plt
 
 from models.abstract import Model
 
 class MonteCarlo(Model):
-    def __init__(self, params):
+    def __init__(self, params, region):
         super().__init__(params, with_tensors=True, name="Monte Carlo")
+        self._prices=None
+        self._region=region
 
     @property
     def npv(self):
         torch.manual_seed(42)
         scenarios = 1000000
-        dW = self._iv * self._time ** 0.5 * torch.randn(size=(scenarios,))
-        r = torch.exp((self._r - self._d - self._iv * self._iv / 2) * self._time + dW)
 
-        if self._option_type == "P":
-            payoff = torch.max(self._strike - self._spot*r, torch.zeros(size=(scenarios,)))
+        if self._region == "eu":
+            w_t = torch.sqrt(self._time) * torch.randn(size=(scenarios,)) #Brownian Motion
         else:
-            payoff = torch.max(self._spot*r - self._strike, torch.zeros(size=(scenarios,)))
+            dt = torch.tensor(1 / 252)
+            w_t = torch.cumsum(torch.sqrt(dt) * torch.randn([scenarios, int(self._time * 252)]), 1)
+
+        dW = self._iv * w_t
+        self._prices = self._spot * torch.exp((self._r - self._d - self._iv * self._iv / 2) * self._time + dW)
+
+        if self._region == "eu":
+            if self._option_type == "P":
+                payoff = torch.max(self._strike - self._prices.clone(), torch.zeros(size=(scenarios,)))
+            else:
+                payoff = torch.max(self._prices.clone() - self._strike, torch.zeros(size=(scenarios,)))
+        else:
+            if self._option_type == "P":
+                payoff = torch.max(self._strike - torch.mean(self._prices.clone(), axis=1), torch.zeros(scenarios))
+            else:
+                payoff = torch.max(torch.mean(self._prices.clone(), axis=1) - self._strike, torch.zeros(scenarios))
 
         return torch.mean(payoff) * torch.exp(-self._r*self._time)
+
+    def _euo_plot(self):
+        price_data = self._prices #.clone()
+        data = price_data.detach().numpy()
+        fig, ax = plt.subplots()
+        #ax.rcParams["figure.figsize"] = (15, 10)
+        ax.hist(data, bins=25)
+        ax.xlabel("Prices")
+        ax.ylabel("Occurences")
+        ax.title("Distribution of Underlying Price after 1 Year")
+        return fig
+
+    def _aso_plot(self):
+        price_data = self._prices #.clone()
+        data = price_data[0, :].detach().numpy()
+        fig, ax = plt.subplots()
+        ax.plot(data)
+        ax.xlabel("Number of Days in Future")
+        ax.ylabel("Underlying Price")
+        ax.title("One Possible Price path")
+        ax.axhline(y=torch.mean(data), color="r", linestyle="--")
+        ax.axhline(y=100, color='g', linestyle="--")
+        return fig
+    
+    @property
+    def plot(self):
+        plt_types = {"eu": self._euo_plot, "as": self._aso_plot}
+        return plt_types.get(self._region)()
     
     @property
     def greeks(self):
         ov = self.npv
         ov.backward()
         return {
-            "delta": self._spot.grad,
-            "rho": self._r.grad,
-            "vega": self._iv.grad,
-            "theta": self._time.grad,
-            "epsilon" : self._d.grad,
-            "strike_greek": self._strike.grad
+            "delta": self._spot.clone().grad,
+            "rho": self._r.clone().grad,
+            "vega": self._iv.clone().grad,
+            "theta": self._time.clone().grad,
+            "epsilon" : self._d.clone().grad,
+            "strike_greek": self._strike.clone().grad
         }
+
+    def st_visualize(self):
+        st.success(str(self))
+        st.divider()
+        st.pyplot(self.plot)
+        st.divider()
+        st.subheader("Calculated Greeks")
+        greeks = self.greeks
+        parsed_greeks = [(k, v) for k, v in greeks.items()]
+        st.table(parsed_greeks)
+        st.divider()
+
+class EUMonteCarlo(MonteCarlo):
+    def __init__(self, params):
+        super().__init__(params, "eu")
+
+class ASMonteCarlo(MonteCarlo):
+    def __init__(self, params):
+        super().__init__(params, "as")
 
 
 def _simulate_ep(policy, env, time_step, base_return=0.0):
