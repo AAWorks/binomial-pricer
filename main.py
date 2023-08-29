@@ -65,7 +65,7 @@ with nasdaq:
     
     message_type[NASDAQ_STATUS](f"Market Status: {NASDAQ_STATUS.replace('-',' ').title()}")
     with st.expander("Note on Data Source"):
-        st.caption("This project was originally designed to use real-time data from Polygon.io. All the infrastructure is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use EOD data from Yahoo Finance [this also means you can use this pricer at all hours :) ].")
+        st.caption("This project was originally designed to use real-time data from Polygon.io. All the infrastructure is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use a combination of EOD data from Polygon.io and Yahoo Finance [this also means you can use this pricer at all hours :) ].")
 
     if True: # NASDAQ_STATUS == "open":
         with st.form("nasdaq-price"):
