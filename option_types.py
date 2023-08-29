@@ -63,3 +63,13 @@ class ASOption(BaseOption):
     _model_map = {
         "Monte Carlo": ASMonteCarlo
     }
+
+    def __init__(self, **kwargs):
+        self._kwargs = kwargs
+        super().__init__(kwargs)
+    
+    def priced(self, model: str):
+        return self._model_map[model](self._kwargs)
+    
+    def all(self):
+        return [self.priced(model) for model in self._model_map.keys()]

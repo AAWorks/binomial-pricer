@@ -1,6 +1,7 @@
 import torch
+import pandas as pd
 import streamlit as st
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 from models.abstract import Model
 
@@ -53,11 +54,11 @@ class MonteCarlo(Model):
         data = price_data[0, :].detach().numpy()
         fig, ax = plt.subplots()
         ax.plot(data)
-        ax.xlabel("Number of Days in Future")
-        ax.ylabel("Underlying Price")
-        ax.title("One Possible Price path")
-        ax.axhline(y=torch.mean(data), color="r", linestyle="--")
-        ax.axhline(y=100, color='g', linestyle="--")
+        plt.xlabel("Number of Days in Future")
+        plt.ylabel("Underlying Price")
+        plt.title("One Possible Price path")
+        plt.axhline(y=torch.mean(price_data[0, :]).detach().numpy(), color="r", linestyle="--")
+        plt.axhline(y=100, color='g', linestyle="--")
         return fig
     
     @property
@@ -70,23 +71,23 @@ class MonteCarlo(Model):
         ov = self.npv
         ov.backward()
         return {
-            "delta": self._spot.clone().grad,
-            "rho": self._r.clone().grad,
-            "vega": self._iv.clone().grad,
-            "theta": self._time.clone().grad,
-            "epsilon" : self._d.clone().grad,
-            "strike_greek": self._strike.clone().grad
+            "delta": self._spot.grad,
+            "rho": self._r.grad,
+            "vega": self._iv.grad,
+            "theta": self._time.grad,
         }
 
     def st_visualize(self):
         st.success(str(self))
         st.divider()
-        st.pyplot(self.plot)
-        st.divider()
         st.subheader("Calculated Greeks")
         greeks = self.greeks
-        parsed_greeks = [(k, v) for k, v in greeks.items()]
-        st.table(parsed_greeks)
+        parsed_greeks = [(k.title(), float(v)) for k, v in greeks.items()]
+        data = pd.DataFrame(parsed_greeks, columns=["Greek", "Value"])
+        st.dataframe(data, hide_index=True, use_container_width=True)
+        st.divider()
+        st.subheader("Single Path Visualization")
+        st.pyplot(self.plot)
         st.divider()
 
 class EUMonteCarlo(MonteCarlo):

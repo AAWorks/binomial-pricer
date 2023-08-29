@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 from models.abstract import inputs
 from models.openai_env import OptionEnv
 from models.baseline_tfa_dqn import TFAModel
-from option_types import MODELS, USOption, EUOption
+from option_types import MODELS, USOption, EUOption, ASOption
 
 from polygon import Polygon
 from utils.tickers import read_tickers
@@ -57,7 +57,7 @@ test_sim_data = env_ex(test_env)
 st.title('Quantitative Options Pricing') 
 st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep Q-Network Model | By Alejandro Alonso and Roman Chenoweth')
 
-nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "411: In-Depth Deep Q-Network Demo"])
+nasdaq, american, eu, asia, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "Options Pricing: Custom Asian Option", "411: In-Depth Deep Q-Network Demo"])
 
 with nasdaq:
     st.info("Pricing Options from the NASDAQ-100 | Work In Progress")
@@ -168,9 +168,33 @@ with eu:
 
         for priced_option in priced_options:
             priced_option.st_visualize()
+with asia:
+    st.info("Price a Custom Asian Option | Work in Progress")
+    with st.form("asia-price"):
+        opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["as"], DEFAULTS)
+    if (maturity - date.today()) / timedelta(days=1) < 0:
+        st.error("Contract Expired")
+    elif submit:
+        if maturity - date.today() < timedelta(days=1):
+            st.error("Maturity Date Already Passed")
+        else:
+            model_name = "all models" if model == "All Models" else f"a {model} model"
+            opt = ASOption(option_type=opttype,
+                    strike=k, spot=s0, 
+                    maturity=maturity, 
+                    implied_volatility=volatility,
+                    risk_free_rate=risk_free_r,
+                    dividend_rate=d)
+            with st.spinner(f"Pricing custom option spread using {model_name}..."):
+                if model == "all models":
+                    priced_options = opt.all() 
+                else:
+                    priced_options = [opt.priced(model)]
 
+        for priced_option in priced_options:
+            priced_option.st_visualize()
 with dqn:
-    st.info("Deep Q-Network Breakdown | Finishing Touches")
+    st.info("Deep Q-Network Breakdown")
     st.subheader("Test Option Specs")
     del test_defs["custom_maturity"]
     ncols = len(test_defs)
