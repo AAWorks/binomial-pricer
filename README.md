@@ -3,4 +3,3 @@
 ### Binomial, Black Scholes, Monte Carlo, DQN
 ---
 Alejandro Alonso and Roman Chenoweth
-
