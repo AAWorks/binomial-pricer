@@ -97,7 +97,7 @@ with nasdaq:
         with st.form("price-contract"):
             cola, colb = st.columns(2)
             opt_id = colb.selectbox("Contract ID", ticker_contracts["Contract ID"])
-            model = cola.selectbox("Model", MODELS["us"] + ["All Models"])
+            model = cola.selectbox("Model", MODELS["us"])
             contract = ticker_contracts.loc[ticker_contracts['Contract ID'] == opt_id].to_dict('records')[0]
             submittwo = st.form_submit_button("Calculate Fair Value", use_container_width=True)
             
@@ -123,7 +123,7 @@ with nasdaq:
 with american:
     st.info("Price a Custom American Option")
     with st.form("american-price"):
-        opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["us"] + ["All Models"], DEFAULTS)
+        opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["us"], DEFAULTS)
     if (maturity - date.today()) / timedelta(days=1) < 0:
         st.error("Contract Expired")
     elif submit:
@@ -146,7 +146,7 @@ with american:
 with eu:
     st.info("Price a Custom European Option")
     with st.form("euro-price"):
-        opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["eu"] + ["All Models"], DEFAULTS)
+        opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["eu"], DEFAULTS)
     if (maturity - date.today()) / timedelta(days=1) < 0:
         st.error("Contract Expired")
     elif submit:
