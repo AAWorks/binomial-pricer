@@ -1,4 +1,6 @@
 import tensorflow as tf
+import streamlit as st
+import pandas as pd
 from models.monte_carlo import dqn_sim
 
 from tf_agents.environments import  gym_wrapper           # wrap OpenAI gym
@@ -16,18 +18,22 @@ class TFAModel(Model):
     def __init__(self, 
                  environment,
                  params,
-                 iterations: int = 20000,
-                 steps: int = 10,
+                 iterations: int = 20,
+                 steps_per_iter: int = 10,
                  repbuffer_len: int = 100000,
                  batch_size: int = 256,
                  learning_r: int = 1e-3,
                  n_eps: int = 10,
-                 eval_interval: int = 1000,
-                 log_interval: int = 200
+                 eval_interval: int = 5,
+                 log_interval: int = 1,
+                 debugging = False,
+                 n_sims: int = 10
                  ): # hyperparameters
+        
+        self._debugging = debugging
 
         self._num_iterations = iterations
-        self._collect_steps_per_iteration = steps
+        self._collect_steps_per_iteration = steps_per_iter
         self._replay_buffer_max_length = repbuffer_len
         self._batch_size = batch_size
 
@@ -40,6 +46,9 @@ class TFAModel(Model):
         self._setup_envs(environment, params)
         self._agent, self._repl_buffer = None, None
         self._log, self._returns = None, None
+        self._npv = None
+        self._n_sims = n_sims
+        self._priced = False
         
     def _setup_envs(self, env, params):
         train_gym, eval_gym = env(params), env(params)
@@ -99,20 +108,28 @@ class TFAModel(Model):
         self._iterator = iter(dataset)
     
     def _train_iteration(self):
-        for _ in range(self._collect_steps_per_iteration):
+        for n in range(self._collect_steps_per_iteration):
+            if self._debugging:
+                with open("data/dqn_log.txt", "a") as f:
+                    f.write(f"collecting [step = {n}] ...\n")
             self._collect_step(self._train_env, self._agent.collect_policy, self._repl_buffer)
         
         exp, _ = next(self._iterator)
         train_loss = self._agent.train(exp).loss
 
         step = self._agent.train_step_counter.numpy()
+        # with open("data/dqn_log.txt", "a") as f:
+        #         f.write(f"step : {step}\n")
 
         if step % self._log_interval == 0:
-            self._log.append(f"step = {step}: loss = {train_loss}")
+            if self._debugging:
+                with open("data/dqn_log.txt", "a") as f:
+                    f.write(f"step = {step}: loss = {train_loss}\n")
+            self._log.append((f"step = {step}", f"loss = {train_loss}"))
         
         if step % self._eval_interval == 0:
             avg_return = dqn_sim(self._agent.policy, self._eval_env, eps=self._num_eval_episodes)
-            self._log.append(f"step = {step}: Average Return = {avg_return}")
+            self._log.append((f"step = {step}", f"Average Return = {avg_return}"))
             self._returns.append(avg_return)
 
     def train(self):
@@ -124,30 +141,68 @@ class TFAModel(Model):
         self._agent.train_step_counter.assign(0)
 
         avg_return = dqn_sim(self._agent.policy, self._eval_env, eps=self._num_eval_episodes)
-        self._log, self._returns = [f"Step = 0: Average Return = {avg_return}"], [avg_return]
 
-        for _ in range(self._num_iterations):
+        self._log, self._returns = [("Step = 0", f"Average Return = {avg_return}")], [avg_return]
+
+        if not self._debugging:
+            bar = st.progress(0.0, text=f"Training Model... (0/{self._num_iterations} Iterations Complete)")
+        for i in range(self._num_iterations):
+            if self._debugging:
+                with open("data/dqn_log.txt", "a") as f:
+                    f.write(f"iteration = [{i}]\n")
+            else:
+                if (i + 1) % self._eval_interval == 0:
+                    bar.progress(float((i + 1) / self._num_iterations), text=f"Evaluating Return... ({i + 1}/{self._num_iterations} Iterations Complete)")
+                else:
+                    bar.progress(float((i + 1) / self._num_iterations), text=f"Training Model... ({i + 1}/{self._num_iterations} Iterations Complete)")
             self._train_iteration()
+        if not self._debugging:
+            bar.progress(1.0, text="Model Trained")
     
     @property
     def train_iteration_dict(self):
-        iterations = range(0, self._num_iterations + 1, self._eval_interval)
+        iterations = [str(x) for x in range(0, self._num_iterations + 1, self._eval_interval)]
         return {
             "Iterations": iterations,
             "Average Return": self._returns
         }
     
+    def _highlight_avg_return(self, ser):
+        highlight = 'background-color: ccefff'
+        default = ''
+        return [highlight if 'Average Return' in str(e) else default for e in ser] 
+    
     @property
     def train_log(self):
-        return self._log
+        cols = ["Step", "Metric"]
+        log = pd.DataFrame(self._log, columns=cols)
+        log.style.apply(self._highlight_avg_return, axis=0, subset=cols)
+        return log
 
     @property
     def train_returns(self):
         return self._returns
+
+    def calculate_npv(self):
+        self._npv = dqn_sim(self._agent.policy, self._eval_env, eps=self._n_sims, st_display=True)
+        self._priced = True
     
-    @property
+    @property 
     def npv(self):
-        return dqn_sim(self._agent.policy, self._eval_env, eps=2_000)
+        return self._npv
 
     def __str__(self):
         return f"Option Price (Deep Q-Network): ${self.npv}"
+    
+    def st_visualize(self):
+        if not self._priced:
+            st.error("Option Not Yet Priced")
+            return
+        st.success(str(self))
+        st.divider()
+        st.subheader("Train Iteration Log")
+        st.dataframe(self.train_log, use_container_width=True)
+        st.divider()
+        st.subheader("Graphed Average Returns")
+        st.line_chart(self.train_iteration_dict, x="Iterations", y="Average Return" )
+        st.divider()

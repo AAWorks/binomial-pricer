@@ -1,4 +1,5 @@
 import QuantLib as ql 
+import streamlit as st
 from datetime import date
 
 from models.abstract import Model
@@ -19,8 +20,9 @@ class BaseBinomialTree(Model):
         self._start_date = ql.Date().from_date(date.today())
         ql.Settings.instance().evaluationDate = self._start_date
 
-    @property
-    def _price_dict(self):
+        self._price_dict = self._get_price_dict()
+
+    def _get_price_dict(self):
         otype, k, s, sigma, r, d = self._option_data
         payoff = ql.PlainVanillaPayoff(otype, k)
 
@@ -46,6 +48,10 @@ class BaseBinomialTree(Model):
     @property
     def npv(self):
         return self._price_dict[self._origin].NPV()
+
+    @property
+    def baseline(self):
+        return self._price_dict["eu"].NPV()
     
     @property
     def greeks(self):
@@ -58,21 +64,33 @@ class BaseBinomialTree(Model):
     @property
     def early_exercise_pnl(self): 
         if self._origin == "eu":
-            return 0.0
+            return None
         return self._price_dict["us"].NPV() - self._price_dict["eu"].NPV()
     
-    def _binomial_price(option, bsm_process, steps):
+    def _binomial_price(self, option, bsm_process, steps):
         binomial_engine = ql.BinomialVanillaEngine(bsm_process, "crr", steps)
         option.setPricingEngine(binomial_engine)
         return option.NPV()
 
     def prices_over_time(self):
-        eu_prices, am_prices = [], []
-        for step in range(5, 200, 1):
+        eu_prices=[]
+        for step in range(2, 200, 1):
             eu_prices.append(self._binomial_price(self._price_dict["eu"], self.bsm, step))
-            am_prices.append(self._binomial_price(self._price_dict["us"], self.bsm, step))
         
-        return eu_prices, am_prices
+        return eu_prices
+    
+    def st_visualize(self):
+        st.success(str(self))
+        if self._origin == "us": 
+            cola, colb = st.columns(2)
+            cola.caption(f"Potential PnL Gained from Early Exercise: ${self.early_exercise_pnl}")
+            colb.caption(f"Held Value: ${self.baseline}")
+        st.divider()
+        eu = self.prices_over_time()
+        st.subheader("Baseline Value Over Time")
+        st.line_chart(eu)
+        st.divider()
+
 
 class EUBinomialTree(BaseBinomialTree):
     def __init__(self, params):

@@ -1,6 +1,9 @@
 import torch
 from torch.distributions import Normal
 
+import streamlit as st
+import pandas as pd
+
 from models.abstract import Model
 
 class BlackScholes(Model):
@@ -25,22 +28,21 @@ class BlackScholes(Model):
 
     @property
     def greeks(self):
-        self.npv.backward()
-        spot = self._spot
-
+        npv = self.npv
+        npv.backward()
         return {
-            "delta": spot.grad,
+            "delta": self._spot.grad,
             "rho" : self._r.grad,
             "vega" : self._iv.grad,
             "theta" : self._time.grad,
-            "epsilon" : self._d.grad,
-            "strike_greek" : self._strike.grad
         }
-    
-    @property
-    def gamma(self):
-        spot = self._spot
-        delta = torch.autograd.grad(self.price, spot, create_graph=True)[0]
-        delta.backward()
 
-        return spot.grad
+    def st_visualize(self):
+        st.success(str(self))
+        st.divider()
+        st.subheader("Calculated Greeks")
+        greeks = self.greeks
+        parsed_greeks = [(k.title(), float(v)) for k, v in greeks.items()]
+        data = pd.DataFrame(parsed_greeks, columns=["Greek", "Value"])
+        st.dataframe(data, hide_index=True, use_container_width=True)
+        st.divider()
