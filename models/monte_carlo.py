@@ -44,9 +44,9 @@ class MonteCarlo(Model):
         fig, ax = plt.subplots()
         #ax.rcParams["figure.figsize"] = (15, 10)
         ax.hist(data, bins=25)
-        ax.xlabel("Prices")
-        ax.ylabel("Occurences")
-        ax.title("Distribution of Underlying Price after 1 Year")
+        plt.xlabel("Prices")
+        plt.ylabel("Occurences")
+        plt.title("Distribution of Underlying Price after 1 Year")
         return fig
 
     def _aso_plot(self):
