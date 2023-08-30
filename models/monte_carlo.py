@@ -35,7 +35,7 @@ class MonteCarlo(Model):
     @property
     def npv(self):
         torch.manual_seed(42)
-        scenarios = 1000000
+        scenarios = 1000000 if self._region == "eu" else 100_000
 
         if self._region == "eu":
             w_t = torch.sqrt(self._time) * torch.randn(size=(scenarios,)) #Brownian Motion
