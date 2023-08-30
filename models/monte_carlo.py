@@ -8,8 +8,29 @@ from models.abstract import Model
 class MonteCarlo(Model):
     def __init__(self, params, region):
         super().__init__(params, with_tensors=True, name="Monte Carlo")
-        self._prices=None
-        self._region=region
+        self._region = region
+        self._plot = None
+    
+    def _euo_plot(self, prices):
+        data = prices.detach().numpy()
+        fig, ax = plt.subplots()
+        #ax.rcParams["figure.figsize"] = (15, 10)
+        ax.hist(data, bins=25)
+        plt.xlabel("Prices")
+        plt.ylabel("Occurences")
+        plt.title("Distribution of Underlying Price after 1 Year")
+        return fig
+
+    def _aso_plot(self, prices):
+        data = prices[0, :].detach().numpy()
+        fig, ax = plt.subplots()
+        ax.plot(data)
+        plt.xlabel("Number of Days in Future")
+        plt.ylabel("Underlying Price")
+        plt.title("One Possible Price path")
+        plt.axhline(y=torch.mean(prices[0, :]).detach().numpy(), color="r", linestyle="--")
+        plt.axhline(y=100, color='g', linestyle="--")
+        return fig
 
     @property
     def npv(self):
@@ -23,48 +44,26 @@ class MonteCarlo(Model):
             w_t = torch.cumsum(torch.sqrt(dt) * torch.randn([scenarios, int(self._time * 252)]), 1)
 
         dW = self._iv * w_t
-        self._prices = self._spot * torch.exp((self._r - self._d - self._iv * self._iv / 2) * self._time + dW)
+        prices = self._spot * torch.exp((self._r - self._d - self._iv * self._iv / 2) * self._time + dW)
 
         if self._region == "eu":
+            self._plot = self._euo_plot(prices)
             if self._option_type == "P":
-                payoff = torch.max(self._strike - self._prices.clone(), torch.zeros(size=(scenarios,)))
+                payoff = torch.max(self._strike - prices, torch.zeros(size=(scenarios,)))
             else:
-                payoff = torch.max(self._prices.clone() - self._strike, torch.zeros(size=(scenarios,)))
+                payoff = torch.max(prices - self._strike, torch.zeros(size=(scenarios,)))
         else:
+            self._plot = self._aso_plot(prices)
             if self._option_type == "P":
-                payoff = torch.max(self._strike - torch.mean(self._prices.clone(), axis=1), torch.zeros(scenarios))
+                payoff = torch.max(self._strike - torch.mean(prices, axis=1), torch.zeros(scenarios))
             else:
-                payoff = torch.max(torch.mean(self._prices.clone(), axis=1) - self._strike, torch.zeros(scenarios))
+                payoff = torch.max(torch.mean(prices, axis=1) - self._strike, torch.zeros(scenarios))
 
         return torch.mean(payoff) * torch.exp(-self._r*self._time)
-
-    def _euo_plot(self):
-        price_data = self._prices #.clone()
-        data = price_data.detach().numpy()
-        fig, ax = plt.subplots()
-        #ax.rcParams["figure.figsize"] = (15, 10)
-        ax.hist(data, bins=25)
-        plt.xlabel("Prices")
-        plt.ylabel("Occurences")
-        plt.title("Distribution of Underlying Price after 1 Year")
-        return fig
-
-    def _aso_plot(self):
-        price_data = self._prices #.clone()
-        data = price_data[0, :].detach().numpy()
-        fig, ax = plt.subplots()
-        ax.plot(data)
-        plt.xlabel("Number of Days in Future")
-        plt.ylabel("Underlying Price")
-        plt.title("One Possible Price path")
-        plt.axhline(y=torch.mean(price_data[0, :]).detach().numpy(), color="r", linestyle="--")
-        plt.axhline(y=100, color='g', linestyle="--")
-        return fig
     
     @property
     def plot(self):
-        plt_types = {"eu": self._euo_plot, "as": self._aso_plot}
-        return plt_types.get(self._region)()
+        return self._plot
     
     @property
     def greeks(self):
