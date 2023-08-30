@@ -1,4 +1,4 @@
-# Options Pricing for US and EU Markets
+# Global Options Pricing (US, EU, and Asian Markets)
 
 ### Binomial, Black Scholes, Monte Carlo, DQN
 ---

@@ -54,13 +54,13 @@ test_defs["maturity"] = test_defs["custom_maturity"]
 test_env = OptionEnv(test_defs)
 test_sim_data = env_ex(test_env)
 
-st.title('Quantitative Options Pricing') 
+st.title('Quantitative Global Options Pricing (US, EU, & Asian Markets)') 
 st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep Q-Network Model | By Alejandro Alonso and Roman Chenoweth')
 
 nasdaq, american, eu, asia, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "Options Pricing: Custom Asian Option", "411: In-Depth Deep Q-Network Demo"])
 
 with nasdaq:
-    st.info("Pricing Options from the NASDAQ-100 | Work In Progress")
+    st.info("Pricing Options from the NASDAQ-100")
     message_type = {"open": st.success, "extended-hours": st.warning, "closed": st.error} 
     
     message_type[NASDAQ_STATUS](f"Market Status: {NASDAQ_STATUS.replace('-',' ').title()}")
@@ -169,7 +169,7 @@ with eu:
         for priced_option in priced_options:
             priced_option.st_visualize()
 with asia:
-    st.info("Price a Custom Asian Option | Work in Progress")
+    st.info("Price a Custom Asian Option")
     with st.form("asia-price"):
         opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["as"], DEFAULTS)
     if (maturity - date.today()) / timedelta(days=1) < 0:
