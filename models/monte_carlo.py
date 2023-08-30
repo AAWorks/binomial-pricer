@@ -86,7 +86,6 @@ class MonteCarlo(Model):
         data = pd.DataFrame(parsed_greeks, columns=["Greek", "Value"])
         st.dataframe(data, hide_index=True, use_container_width=True)
         st.divider()
-        st.subheader("Single Path Visualization")
         st.pyplot(self.plot)
         st.divider()
 
