@@ -60,7 +60,7 @@ st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep 
 nasdaq, american, eu, asia, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "Options Pricing: Custom Asian Option", "411: In-Depth Deep Q-Network Demo"])
 
 with nasdaq:
-    st.info("Pricing Options from the NASDAQ-100")
+    st.info("Pricing A Range of Options from the NASDAQ-100")
     message_type = {"open": st.success, "extended-hours": st.warning, "closed": st.error} 
     
     message_type[NASDAQ_STATUS](f"Market Status: {NASDAQ_STATUS.replace('-',' ').title()}")
@@ -249,6 +249,6 @@ with dqn:
 #     if submitted:
 #         key = tmpkey if tmpkey.strip() != "" else None
 
-#         if pwd == "123457":
+#         if pwd == "______":
 #             with st.spinner("Pulling..."):
 #                 Polygon(key=key).store_eod_data()
