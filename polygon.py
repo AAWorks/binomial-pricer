@@ -61,7 +61,6 @@ class Polygon:
         else:
             return price_results["c"] # close
 
-    @property
     def last_ticker_prices(self):
         price_dict, tickers = {}, self.nasdaq_tickers
         for ticker in tickers:

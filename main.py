@@ -28,7 +28,7 @@ def check_nasdaq_status():
 
 @st.cache_data(ttl=timedelta(hours=1))
 def pull_close_prices():
-    return POLYGON.last_ticker_prices
+    return POLYGON.last_ticker_prices()
 
 @st.cache_data
 def get_custom_defaults():
