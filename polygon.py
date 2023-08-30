@@ -68,13 +68,14 @@ class Polygon:
             try:
                 stock = yf.Ticker(ticker).history()
                 current_price = stock['Close'].iloc[-1]
-                price_dict[ticker] = current_price
             except:
                 if self._debugging:
                     with open("data/error_log.txt", "a") as f:
                         f.write(f"<error> Ticker: {ticker}")
 
-                price_dict[ticker] = float(self._get_close_price_from_poly(ticker))
+                current_price = float(self._get_close_price_from_poly(ticker))
+            
+            price_dict[ticker] = current_price
                 
         return price_dict
 
