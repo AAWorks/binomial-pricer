@@ -7,13 +7,13 @@ from yahoo_fin import options
 from datetime import datetime
 
 from utils.tickers import read_tickers
-from utils.db_wrapper import clear_table, add_rows, yf_current_prices
+from utils.db_wrapper import clear_table, add_rows
 
 class Polygon:
     _headers: dict
     _base_url: str
 
-    def __init__(self, key=None, yf_backup=False):
+    def __init__(self, key=None, yf_backup=False, debugging=False):
         if key is None:
             with open('data/polygon.txt', 'r') as keyfile:
                 key = keyfile.readline().strip()
@@ -24,6 +24,7 @@ class Polygon:
 
         self._base_url = 'https://api.polygon.io/'
         self._yf_backup = yf_backup
+        self._debugging = debugging
     
     @property
     def risk_free_rate(self):
@@ -42,14 +43,6 @@ class Polygon:
     @property
     def nasdaq_tickers(self):
         return read_tickers()
-    
-    @property
-    def last_ticker_prices(self):
-        return yf_current_prices(self.nasdaq_tickers)
-
-    @property
-    def base_url(self):
-        return self._base_url
 
     def _get_req_url(self, extension: str = ""):
         return self._base_url + extension
@@ -57,6 +50,37 @@ class Polygon:
     def _query(self, query: str):
         full_query = self._get_req_url(query)
         return requests.request("GET", url=full_query, headers=self._headers)
+    
+    def _get_close_price_from_poly(self, ticker):
+        query = f"v2/aggs/ticker/{ticker}/prev?adjusted=true"
+        previous_day_details = self._query(query).json()
+        price_results = previous_day_details["results"][0]
+        
+        if "vw" in price_results:
+            return price_results["vw"] #volume weighted avg
+        else:
+            return price_results["c"] # close
+
+    def last_ticker_prices(self):
+        price_dict, tickers = {}, self.nasdaq_tickers
+        for ticker in tickers:
+            try:
+                stock = yf.Ticker(ticker).history()
+                current_price = stock['Close'].iloc[-1]
+            except:
+                if self._debugging:
+                    with open("data/error_log.txt", "a") as f:
+                        f.write(f"<error> Ticker: {ticker}")
+
+                current_price = float(self._get_close_price_from_poly(ticker))
+            
+            price_dict[ticker] = current_price
+                
+        return price_dict
+
+    @property
+    def base_url(self):
+        return self._base_url
     
     def _options_query(self, query: str):
         time.sleep(12)

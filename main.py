@@ -4,8 +4,9 @@ st.set_page_config(layout="wide", page_title="Options Pricing", page_icon=":gear
 from datetime import datetime, date, timedelta
 
 from models.abstract import inputs
-from openai_env import OptionEnv
-from option_types import MODELS, USOption, EUOption
+from models.openai_env import OptionEnv
+from models.baseline_tfa_dqn import TFAModel
+from option_types import MODELS, USOption, EUOption, ASOption
 
 from polygon import Polygon
 from utils.tickers import read_tickers
@@ -27,7 +28,7 @@ def check_nasdaq_status():
 
 @st.cache_data(ttl=timedelta(hours=1))
 def pull_close_prices():
-    return POLYGON.last_ticker_prices
+    return POLYGON.last_ticker_prices()
 
 @st.cache_data
 def get_custom_defaults():
@@ -56,7 +57,7 @@ test_sim_data = env_ex(test_env)
 st.title('Quantitative Options Pricing') 
 st.caption('Via Black Scholes, Binomial Trees, Monte Carlo Sampling, and a Deep Q-Network Model | By Alejandro Alonso and Roman Chenoweth')
 
-nasdaq, american, eu, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "About the Deep Q-Network Model"])
+nasdaq, american, eu, asia, dqn = st.tabs(["Options Pricing: NASDAQ-100", "Options Pricing: Custom American Option", "Options Pricing: Custom European Option", "Options Pricing: Custom Asian Option", "411: In-Depth Deep Q-Network Demo"])
 
 with nasdaq:
     st.info("Pricing Options from the NASDAQ-100 | Work In Progress")
@@ -64,7 +65,7 @@ with nasdaq:
     
     message_type[NASDAQ_STATUS](f"Market Status: {NASDAQ_STATUS.replace('-',' ').title()}")
     with st.expander("Note on Data Source"):
-        st.caption("This project was originally designed to use real-time data from Polygon.io. All the infrastructure is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use EOD data from Yahoo Finance [this also means you can use this pricer at all hours :) ].")
+        st.caption("This project was originally designed to use real-time data from Polygon.io. All the infrastructure is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use a combination of EOD data from Polygon.io and Yahoo Finance [this also means you can use this pricer at all hours :) ].")
 
     if True: # NASDAQ_STATUS == "open":
         with st.form("nasdaq-price"):
@@ -75,14 +76,29 @@ with nasdaq:
             submit = st.form_submit_button("Update Contract Table", use_container_width=True)
 
         ticker_contracts = POLYGON.get_ticker_contracts_given_exp(ticker, expiration=maturity)
-
-        st.write(ticker_contracts)
+        
+        ticker_contracts["spot"] = EOD_PRICES[ticker]
+        st.dataframe(ticker_contracts, hide_index=True, use_container_width=True,
+                     column_order=("Contract ID", "Contract Name", "Type", "spot", 
+                                   "Strike", "Mark", "Implied Volatility", "Last Trade Date",
+                                   "Last Price", "Bid", "Ask", "Open Interest"),
+                     column_config={
+            "Contract Name": "Full Ticker",
+            "Type": "Call/Put",
+            "spot": st.column_config.NumberColumn("Spot Price", format="$%.2f"),
+            "Strike": st.column_config.NumberColumn("Strike", format="$%.2f"),
+            "Mark": st.column_config.NumberColumn("Mark (Mid)", format="$%.2f"),
+            "Last Trade Date": "Last Trade Date",
+            "Last Price": st.column_config.NumberColumn("Last Trade Price", format="$%.2f"),
+            "Bid": st.column_config.NumberColumn("Bid", format="$%.2f"),
+            "Ask": st.column_config.NumberColumn("Ask", format="$%.2f"),
+            "Open Interest": "OI"
+        })
         with st.form("price-contract"):
-            cola, colb, colc = st.columns(3)
+            cola, colb = st.columns(2)
             opt_id = colb.selectbox("Contract ID", ticker_contracts["Contract ID"])
             model = cola.selectbox("Model", MODELS["us"] + ["All Models"])
             contract = ticker_contracts.loc[ticker_contracts['Contract ID'] == opt_id].to_dict('records')[0]
-            colc.metric("Strike", value=f"${contract['Strike']}")
             submittwo = st.form_submit_button("Calculate Fair Value", use_container_width=True)
             
         if submittwo:
@@ -93,7 +109,7 @@ with nasdaq:
                 implied_volatility=float(contract["Implied Volatility"][:-1].replace(",","")) / 100,
                 risk_free_rate=DEFAULTS["risk_free_rate"],
                 dividend_rate=0.02)
-            
+            if model == "Deep Q-Network": st.warning("Options Pricing with the DQN may take a few minutes")
             with st.spinner(f"Pricing {ticker} option #{opt_id} using {model_name}..."):
                 if model == "all models": 
                     priced_options = opt.all()
@@ -102,7 +118,7 @@ with nasdaq:
             
             st.info(f"Contract Mark: {contract['Mark']}")
             for priced_option in priced_options:
-                st.success(str(priced_option))
+                priced_option.st_visualize()
 
 with american:
     st.info("Price a Custom American Option")
@@ -118,6 +134,7 @@ with american:
                     implied_volatility=volatility,
                     risk_free_rate=risk_free_r,
                     dividend_rate=d)
+        if model == "Deep Q-Network": st.warning("Options Pricing with the DQN may take a few minutes")
         with st.spinner(f"Pricing custom option spread using {model_name}..."):
             if model == "all models": 
                 priced_options = opt.all()
@@ -125,7 +142,7 @@ with american:
                 priced_options = [opt.priced(model)]
 
         for priced_option in priced_options:
-            st.success(str(priced_option))
+            priced_option.st_visualize()
 with eu:
     st.info("Price a Custom European Option")
     with st.form("euro-price"):
@@ -150,11 +167,78 @@ with eu:
                     priced_options = [opt.priced(model)]
 
         for priced_option in priced_options:
-            st.success(str(priced_option))
+            priced_option.st_visualize()
+with asia:
+    st.info("Price a Custom Asian Option | Work in Progress")
+    with st.form("asia-price"):
+        opttype, s0, k, volatility, risk_free_r, d, maturity, model, submit = inputs(MODELS["as"], DEFAULTS)
+    if (maturity - date.today()) / timedelta(days=1) < 0:
+        st.error("Contract Expired")
+    elif submit:
+        if maturity - date.today() < timedelta(days=1):
+            st.error("Maturity Date Already Passed")
+        else:
+            model_name = "all models" if model == "All Models" else f"a {model} model"
+            opt = ASOption(option_type=opttype,
+                    strike=k, spot=s0, 
+                    maturity=maturity, 
+                    implied_volatility=volatility,
+                    risk_free_rate=risk_free_r,
+                    dividend_rate=d)
+            with st.spinner(f"Pricing custom option spread using {model_name}..."):
+                if model == "all models":
+                    priced_options = opt.all() 
+                else:
+                    priced_options = [opt.priced(model)]
 
+        for priced_option in priced_options:
+            priced_option.st_visualize()
 with dqn:
-    st.info("Deep Q-Network Breakdown | Work in progress")
-    st.line_chart(test_sim_data)
+    st.info("Deep Q-Network Breakdown")
+    st.subheader("Test Option Specs")
+    del test_defs["custom_maturity"]
+    ncols = len(test_defs)
+    def_keys = list(test_defs.keys())
+    columns = st.columns(ncols)
+    for n in range(ncols):
+        key = def_keys[n]
+        value = test_defs[key] if key != "maturity" else test_defs[key].strftime("%m/%d/%Y")
+        columns[n].metric(key.replace("_"," ").title(), str(value)[:10])
+
+    st.divider()
+
+    st.subheader("Simulated Option Data (Assuming No Early Excercise)")
+    sim_data = {"Option Price": test_sim_data, "Time-Steps": list(range(366))}
+    st.line_chart(sim_data, x="Time-Steps", y="Option Price")
+
+    st.divider()
+    st.subheader("Deep Q-Network Specs")
+    with st.form("Define Specs"):
+        cola, colb, colc, cold = st.columns(4)
+        n_iterations = cola.number_input("Number of Iterations", min_value=1, max_value=20000, value=200, step=1)
+        eval_interval = colb.number_input("Evaluate Return Every _ Steps", min_value=1, max_value=10000, value=50, step=1)
+        log_interval = colc.number_input("Log Every _ Steps", min_value=1, max_value=20000, value=10, step=1)
+        n_sims = cold.number_input("Number of Simulation Episodes", min_value=1, max_value=2000, value=20, step=1)
+        go = st.form_submit_button("Price Demo Option", use_container_width=True)
+
+    if eval_interval > n_iterations or log_interval > n_iterations:
+        st.error("Evaluation and Log Intervals must be less than the total number of iterations")
+    elif go:
+        st.subheader("Model")
+        tfa = TFAModel(OptionEnv, test_defs, iterations=n_iterations, eval_interval=eval_interval, log_interval=log_interval, n_sims=n_sims)
+        with st.status("Building Model...", expanded=True) as status:
+            st.write("Initializing Agent...")
+            tfa.init_agent()
+            st.write("Done | Building Replay Buffer...")
+            tfa.build_replay_buffer()
+            st.write("Done | Preparing to Train...")
+            tfa.train()
+            status.update(label="Model Built - Pricing Option", state="running", expanded=True)
+            tfa.calculate_npv()
+            status.update(label="Option Pricing Complete", state="complete", expanded=False)
+        
+        st.divider()
+        tfa.st_visualize()
 
 # with pull:
 #     with st.form("tmp_pull"):
