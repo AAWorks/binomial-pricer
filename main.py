@@ -67,58 +67,60 @@ with nasdaq:
     with st.expander("Note on Data Source"):
         st.caption("This project was originally designed to use real-time data from Polygon.io. All the infrastructure is present, however, due to financial constraints, we opted to terminate our subscription to Polygon.io after a month. So while this pricer can be easily reconfigured to use Polygon.io's data, we currently use a combination of EOD data from Polygon.io and Yahoo Finance [this also means you can use this pricer at all hours :) ].")
 
-    if True: # NASDAQ_STATUS == "open":
-        with st.form("nasdaq-price"):
-            cola, colb = st.columns(2)
-            ticker = cola.selectbox("Underlying Ticker", ALL_TICKERS)
-            maturity = colb.selectbox("Expiration Date", POLYGON.expiration_dates(ticker))
-            maturity = datetime.strptime(maturity, '%B %d, %Y').date()
-            submit = st.form_submit_button("Update Contract Table", use_container_width=True)
+    if True: #NASDAQ_STATUS == "open":
+        st.info("Unfortunately due to changes made to how yahoo_fin scrapes options data (specifically expiration dates) we are currently unable to showcase this part of the app. We are currently working on a replacement library as you read this :).")
+        # with st.form("nasdaq-price"):
+        #     cola, colb = st.columns(2)
+        #     ticker = cola.selectbox("Underlying Ticker", ALL_TICKERS)
+        #     maturity = colb.selectbox("Expiration Date", POLYGON.expiration_dates(ticker))
+        #     maturity = datetime.strptime(maturity, '%B %d, %Y').date()
+        #     submit = st.form_submit_button("Update Contract Table", use_container_width=True)
 
-        ticker_contracts = POLYGON.get_ticker_contracts_given_exp(ticker, expiration=maturity)
-        
-        ticker_contracts["spot"] = EOD_PRICES[ticker]
-        st.dataframe(ticker_contracts, hide_index=True, use_container_width=True,
-                     column_order=("Contract ID", "Contract Name", "Type", "spot", 
-                                   "Strike", "Mark", "Implied Volatility", "Last Trade Date",
-                                   "Last Price", "Bid", "Ask", "Open Interest"),
-                     column_config={
-            "Contract Name": "Full Ticker",
-            "Type": "Call/Put",
-            "spot": st.column_config.NumberColumn("Spot Price", format="$%.2f"),
-            "Strike": st.column_config.NumberColumn("Strike", format="$%.2f"),
-            "Mark": st.column_config.NumberColumn("Mark (Mid)", format="$%.2f"),
-            "Last Trade Date": "Last Trade Date",
-            "Last Price": st.column_config.NumberColumn("Last Trade Price", format="$%.2f"),
-            "Bid": st.column_config.NumberColumn("Bid", format="$%.2f"),
-            "Ask": st.column_config.NumberColumn("Ask", format="$%.2f"),
-            "Open Interest": "OI"
-        })
-        with st.form("price-contract"):
-            cola, colb = st.columns(2)
-            opt_id = colb.selectbox("Contract ID", ticker_contracts["Contract ID"])
-            model = cola.selectbox("Model", MODELS["us"])
-            contract = ticker_contracts.loc[ticker_contracts['Contract ID'] == opt_id].to_dict('records')[0]
-            submittwo = st.form_submit_button("Calculate Fair Value", use_container_width=True)
-            
-        if submittwo:
-            model_name = "all models" if model == "All Models" else f"a {model} model"
-            opt = USOption(option_type=contract["Type"],
-                strike=contract["Strike"], spot=EOD_PRICES[ticker], 
-                maturity=maturity, 
-                implied_volatility=float(contract["Implied Volatility"][:-1].replace(",","")) / 100,
-                risk_free_rate=DEFAULTS["risk_free_rate"],
-                dividend_rate=0.02)
-            if model == "Deep Q-Network": st.warning("Options Pricing with the DQN may take a few minutes")
-            with st.spinner(f"Pricing {ticker} option #{opt_id} using {model_name}..."):
-                if model == "all models": 
-                    priced_options = opt.all()
-                else:
-                    priced_options = [opt.priced(model)]
-            
-            st.info(f"Contract Mark: {contract['Mark']}")
-            for priced_option in priced_options:
-                priced_option.st_visualize()
+        #     if submit:
+        #         ticker_contracts = POLYGON.get_ticker_contracts_given_exp(ticker, expiration=maturity)
+                
+        #         ticker_contracts["spot"] = EOD_PRICES[ticker]
+        #         st.dataframe(ticker_contracts, hide_index=True, use_container_width=True,
+        #                     column_order=("Contract ID", "Contract Name", "Type", "spot", 
+        #                                 "Strike", "Mark", "Implied Volatility", "Last Trade Date",
+        #                                 "Last Price", "Bid", "Ask", "Open Interest"),
+        #                     column_config={
+        #             "Contract Name": "Full Ticker",
+        #             "Type": "Call/Put",
+        #             "spot": st.column_config.NumberColumn("Spot Price", format="$%.2f"),
+        #             "Strike": st.column_config.NumberColumn("Strike", format="$%.2f"),
+        #             "Mark": st.column_config.NumberColumn("Mark (Mid)", format="$%.2f"),
+        #             "Last Trade Date": "Last Trade Date",
+        #             "Last Price": st.column_config.NumberColumn("Last Trade Price", format="$%.2f"),
+        #             "Bid": st.column_config.NumberColumn("Bid", format="$%.2f"),
+        #             "Ask": st.column_config.NumberColumn("Ask", format="$%.2f"),
+        #             "Open Interest": "OI"
+        #         })
+        #         with st.form("price-contract"):
+        #             cola, colb = st.columns(2)
+        #             opt_id = colb.selectbox("Contract ID", ticker_contracts["Contract ID"])
+        #             model = cola.selectbox("Model", MODELS["us"])
+        #             contract = ticker_contracts.loc[ticker_contracts['Contract ID'] == opt_id].to_dict('records')[0]
+        #             submittwo = st.form_submit_button("Calculate Fair Value", use_container_width=True)
+                    
+        #         if submittwo:
+        #             model_name = "all models" if model == "All Models" else f"a {model} model"
+        #             opt = USOption(option_type=contract["Type"],
+        #                 strike=contract["Strike"], spot=EOD_PRICES[ticker], 
+        #                 maturity=maturity, 
+        #                 implied_volatility=float(contract["Implied Volatility"][:-1].replace(",","")) / 100,
+        #                 risk_free_rate=DEFAULTS["risk_free_rate"],
+        #                 dividend_rate=0.02)
+        #             if model == "Deep Q-Network": st.warning("Options Pricing with the DQN may take a few minutes")
+        #             with st.spinner(f"Pricing {ticker} option #{opt_id} using {model_name}..."):
+        #                 if model == "all models": 
+        #                     priced_options = opt.all()
+        #                 else:
+        #                     priced_options = [opt.priced(model)]
+                    
+        #             st.info(f"Contract Mark: {contract['Mark']}")
+        #             for priced_option in priced_options:
+        #                 priced_option.st_visualize()
 
 with american:
     st.info("Price a Custom American Option")
